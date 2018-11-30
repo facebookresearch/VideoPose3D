@@ -7,6 +7,7 @@ This is the implementation of the approach described in the paper:
 More demos are available at https://dariopavllo.github.io/VideoPose3D
 
 <p align="center"><img src="images/demo_yt.gif" width="70%" alt="" /></p>
+
 ![](images/demo_temporal.gif)
 
 ### Results on Human3.6M
