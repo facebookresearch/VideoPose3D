@@ -8,7 +8,6 @@ More demos are available at https://dariopavllo.github.io/VideoPose3D
 
 <p align="center"><img src="images/demo_yt.gif" width="70%" alt="" /></p>
 ![](images/demo_temporal.gif)
-<p align="center"><img src="images/demo_yt.gif" width="70%" alt="" /></p>
 
 ### Results on Human3.6M
 Under Protocol 1 (mean per-joint position error) and Protocol 2 (mean-per-joint position error after rigid alignment).
