@@ -1,9 +1,12 @@
 # 3D human pose estimation in video with temporal convolutions and semi-supervised training
+<p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
+
 This is the implementation of the approach described in the paper:
-> Dario Pavllo, Christoph Feichtenhofer,David Grangier, and Michael Auli. [3D human pose estimation in video with temporal convolutions and semi-supervised training](https://arxiv.org/abs/1811.11742). In *arXiv*, 2018.
+> Dario Pavllo, Christoph Feichtenhofer, David Grangier, and Michael Auli. [3D human pose estimation in video with temporal convolutions and semi-supervised training](https://arxiv.org/abs/1811.11742). In *arXiv*, 2018.
 
 More demos are available at https://dariopavllo.github.io/VideoPose3D
 
+<p align="center"><img src="images/demo_yt.gif" width="70%" alt="" /></p>
 ![](images/demo_temporal.gif)
 
 ### Results on Human3.6M
