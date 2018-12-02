@@ -88,7 +88,7 @@ def import_cpn_poses(path):
     
     
 def import_sh_poses(path):
-    with h5py.File(f) as hf:
+    with h5py.File(path) as hf:
         positions = hf['poses'].value
     return positions.astype('float32')
     
