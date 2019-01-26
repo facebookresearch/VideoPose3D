@@ -34,6 +34,7 @@ except OSError as e:
     if e.errno != errno.EEXIST:
         raise RuntimeError('Unable to create checkpoint directory:', args.checkpoint)
 
+## 3D position
 print('Loading dataset...')
 dataset_path = 'data/data_3d_' + args.dataset + '.npz'
 if args.dataset == 'h36m':
@@ -57,6 +58,9 @@ for subject in dataset.subjects():
             positions_3d.append(pos_3d)
         anim['positions_3d'] = positions_3d
 
+## 3D position
+
+
 print('Loading 2D detections...')
 keypoints = np.load('data/data_2d_' + args.dataset + '_' + args.keypoints + '.npz')
 keypoints_symmetry = keypoints['metadata'].item()['keypoints_symmetry']
@@ -69,11 +73,11 @@ for subject in dataset.subjects():
     for action in dataset[subject].keys():
         assert action in keypoints[subject], 'Action {} of subject {} is missing from the 2D detections dataset'.format(action, subject)
         for cam_idx in range(len(keypoints[subject][action])):
-            
+
             # We check for >= instead of == because some videos in H3.6M contain extra frames
             mocap_length = dataset[subject][action]['positions_3d'][cam_idx].shape[0]
             assert keypoints[subject][action][cam_idx].shape[0] >= mocap_length
-            
+
             if keypoints[subject][action][cam_idx].shape[0] > mocap_length:
                 # Shorten sequence
                 keypoints[subject][action][cam_idx] = keypoints[subject][action][cam_idx][:mocap_length]

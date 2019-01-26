@@ -1,0 +1,5 @@
+.idea/
+data/*
+checkpoint/*
+!data/tools/*
+!data/tools
