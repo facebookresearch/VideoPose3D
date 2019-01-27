@@ -1,5 +1,5 @@
 # This is the 'in the wild' fork of 3D human pose estimation in video with temporal convolutions and semi-supervised training
-With this repository you can run the VideoPose3D code on your own data. run_wild.py enables you to run the code on 2D poses that you created yourself using detectron. I did not use CPN 2D pose refinemend as discussed (here)[https://github.com/facebookresearch/VideoPose3D/issues/2#issuecomment-443502874]. 
+With this repository you can run the VideoPose3D code on your own data. run_wild.py enables you to run the code on 2D poses that you created yourself using detectron. I did not use CPN 2D pose refinemend as discussed [here](https://github.com/facebookresearch/VideoPose3D/issues/2#issuecomment-443502874). 
 
 
 <p align="center"><img src="images/scater_girl.gif" width="75%" alt="" /></p>
