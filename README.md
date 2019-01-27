@@ -5,7 +5,7 @@ With this repository you can run the VideoPose3D code on your own data. run_wild
 <p align="center"><img src="images/scater_girl.gif" width="75%" alt="" /></p>
 
 
-If you want to run on your own videos you have to do step 1. and 2. otherwise go directly to 3.
+If you want to run on your own videos you have to do step 1. and 2. otherwise go directly to 6.
 
 1. Find a video you like and download it.
 2. Use ffmpeg to split it into individual frames in 'detectron_tools/' you can find the modified infer_simple.py file witch helps you to export the 2D poses. And the detectron_tools.txt that shows and example on how to use ffmpeg over your video.
@@ -16,10 +16,10 @@ If you want to run on your own videos you have to do step 1. and 2. otherwise go
 	/pathToYourWeightFileFrom/keypoints_coco_2014_train:keypoints_coco_2014_valminusminival/model_final.pkl
 demo/splitted_scating
 
-3. Move the data_2d_detections.npz file that you created into VideoPose3D/data or just use the one I created from the ice scating video.
-4. When you run the program make sure you choose the right video file! The ice scating video is located at data/ice_cutted_cropped.mp4
-5. Download the checkpoint file provided by the authors -  (Link)[https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin] - and move it to your VideoPose3D/checkpoint folder
-6. Now it is time to run the thing!
+6. Move the data_2d_detections.npz file that you created into VideoPose3D/data or just use the one I created from the ice scating video.
+7. When you run the program make sure you choose the right video file! The ice scating video is located at data/ice_cutted_cropped.mp4
+8. Download the checkpoint file provided by the authors -  (Link)[https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin] - and move it to your VideoPose3D/checkpoint folder
+9. Now it is time to run the thing!
 
 My arguments for VideoPose3D:
 
