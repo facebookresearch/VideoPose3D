@@ -128,24 +128,60 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
 			ax.set_xlim3d([-radius/2 + trajectories[n][i, 0], radius/2 + trajectories[n][i, 0]])
 			ax.set_ylim3d([-radius/2 + trajectories[n][i, 1], radius/2 + trajectories[n][i, 1]])
 
+
+		# the coco_keypoints are used here and its not the same as the 3D skeleton model.
+		coco_parents = [
+			'nose',
+			'left_eye',
+			'right_eye',
+			'left_ear',
+			'right_ear',
+			'left_shoulder',
+			'right_shoulder',
+			'left_elbow',
+			'right_elbow',
+			'left_wrist',
+			'right_wrist',
+			'left_hip',
+			'right_hip',
+			'left_knee',
+			'right_knee',
+			'left_ankle',
+			'right_ankle'
+		]
+		#parents_coco_head = [1, 2, 0, 1, 2,]
+		#parents_coco_torso = [20,20,5,6,7,8]
+		#parents_coco_bottom = [21,21,11,12,15,16, 0, 17]
+		parents_coco = [1, 2, 0, 1, 2, 17,17,5,6,7,8, 18, 18,11,12,13 ,14, 0, 17]
+		# This is needed because neck and hip does not appear naturally as points in the coco keypoint representation
+		neck = np.zeros((1,2))
+		neck[0][0] = (keypoints[i, 5, 0]+ keypoints[i, 6, 0])/2
+		neck[0][1] = (keypoints[i, 5, 1] + keypoints[i, 6, 1]) / 2
+		keypoints_plus_c_hip_and_neck = np.append(keypoints[i], neck, axis=0)
+		hip = np.zeros((1,2))
+		hip[0][0] = (keypoints[i, 11, 0] + keypoints[i, 12, 0])/2
+		hip[0][1] = (keypoints[i, 11, 1] + keypoints[i, 12, 1])/2
+		keypoints_plus_c_hip_and_neck = np.append(keypoints_plus_c_hip_and_neck, hip, axis=0)
 		# Update 2D poses
 		if not initialized:
 			image = ax_in.imshow(all_frames[i], aspect='equal')
-			for j, j_parent in enumerate(parents):
-				if j_parent == -1:
+
+			for j, j_parent in enumerate(parents_coco):
+				if j < 17 and parents[j] == -1:
 					continue
-					
-				if len(parents) == keypoints.shape[1]:
+
+				if len(parents_coco) == keypoints_plus_c_hip_and_neck.shape[0]:
 					# Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
-					lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-											[keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
+					lines.append(ax_in.plot([keypoints_plus_c_hip_and_neck[j, 0], keypoints_plus_c_hip_and_neck[j_parent, 0]],
+											[keypoints_plus_c_hip_and_neck[j, 1], keypoints_plus_c_hip_and_neck[j_parent, 1]], color='pink'))
 
 				col = 'red' if j in skeleton.joints_right() else 'black'
-				for n, ax in enumerate(ax_3d):
-					pos = poses[n][i]
-					lines_3d[n].append(ax.plot([pos[j, 0], pos[j_parent, 0]],
-											   [pos[j, 1], pos[j_parent, 1]],
-											   [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
+				if j < 17:
+					for n, ax in enumerate(ax_3d):
+						pos = poses[n][i]
+						lines_3d[n].append(ax.plot([pos[j, 0], pos[parents[j], 0]],
+													[pos[j, 1], pos[parents[j], 1]],
+													[pos[j, 2], pos[parents[j], 2]], zdir='z', c=col))
 
 			points = ax_in.scatter(*keypoints[i].T, 5, color='red', edgecolors='white', zorder=10)
 
@@ -153,19 +189,19 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
 		else:
 			image.set_data(all_frames[i])
 
-			for j, j_parent in enumerate(parents):
-				if j_parent == -1:
+			for j, j_parent in enumerate(parents_coco):
+				if j < 17 and parents[j] == -1:
 					continue
 				
-				if len(parents) == keypoints.shape[1]:
-					lines[j-1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-										   [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
-
-				for n, ax in enumerate(ax_3d):
-					pos = poses[n][i]
-					lines_3d[n][j-1][0].set_xdata([pos[j, 0], pos[j_parent, 0]])
-					lines_3d[n][j-1][0].set_ydata([pos[j, 1], pos[j_parent, 1]])
-					lines_3d[n][j-1][0].set_3d_properties([pos[j, 2], pos[j_parent, 2]], zdir='z')
+				if len(parents_coco) == keypoints_plus_c_hip_and_neck.shape[0]:
+					lines[j-1][0].set_data([keypoints_plus_c_hip_and_neck[j, 0], keypoints_plus_c_hip_and_neck[j_parent, 0]],
+											[keypoints_plus_c_hip_and_neck[j, 1], keypoints_plus_c_hip_and_neck[j_parent, 1]])
+				if j < 17:
+					for n, ax in enumerate(ax_3d):
+						pos = poses[n][i]
+						lines_3d[n][j-1][0].set_xdata([pos[j, 0], pos[parents[j], 0]])
+						lines_3d[n][j-1][0].set_ydata([pos[j, 1], pos[parents[j], 1]])
+						lines_3d[n][j-1][0].set_3d_properties([pos[j, 2], pos[parents[j], 2]], zdir='z')
 
 			points.set_offsets(keypoints[i])
 		

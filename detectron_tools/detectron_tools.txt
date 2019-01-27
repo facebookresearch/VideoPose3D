@@ -1,0 +1,14 @@
+    
+The easiest way to run detectron is to run it over a folder with screenshots because thats already implemented in the infer_simple.py file.
+To split the video you plan on using try to use ffmpeg.
+
+Splitting command:  ffmpeg -i ice.mp4 -r 25/1 splitted_scating/output%04d.png
+Video Link: https://www.youtube.com/watch?v=ke0iusvydl8
+I downloaded the video named it ice.mp4 and called the ffmpeg command like this. This will take a while because the video has many frames.
+
+Now you can run detectron. Replace the infer_simple provided in this folder with the infer_simple from detectron (or just rename it). Run the infer_simple and the exported poses will be stored at your location (change 'pathToSave')
+
+Now you created everything you need as Input for VideoPose3D! 
+
+
+
