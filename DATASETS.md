@@ -52,8 +52,8 @@ You can download these from AWS. You just have to put `data_2d_h36m_cpn_ft_h36m_
 
 ```sh
 cd data
-wget https://s3.amazonaws.com/video-pose-3d/data_2d_h36m_cpn_ft_h36m_dbb.npz
-wget https://s3.amazonaws.com/video-pose-3d/data_2d_h36m_detectron_ft_h36m.npz
+wget https://dl.fbaipublicfiles.com/video-pose-3d/data_2d_h36m_cpn_ft_h36m_dbb.npz
+wget https://dl.fbaipublicfiles.com/video-pose-3d/data_2d_h36m_detectron_ft_h36m.npz
 cd ..
 ```
 
@@ -97,6 +97,6 @@ We provide support for the following 2D detections:
 Since HumanEva is very small, we do not fine-tune the pretrained models. As before, you can download Mask R-CNN detections from AWS (`data_2d_humaneva15_detectron_pt_coco.npz`, which must be copied to `data/`). As before, we have included detections for unlabeled subjects/actions. These begin with the prefix `Unlabeled/`. Chunks that correspond to corrupted motion capture streams are also marked as unlabeled.
 ```sh
 cd data
-wget https://s3.amazonaws.com/video-pose-3d/data_2d_humaneva15_detectron_pt_coco.npz
+wget https://dl.fbaipublicfiles.com/video-pose-3d/data_2d_humaneva15_detectron_pt_coco.npz
 cd ..
 ```
