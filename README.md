@@ -19,7 +19,7 @@ If you want to run on your own videos you have to do step 1. and 2. otherwise go
 demo/splitted_scating
 
 3. Move the data_2d_detections.npz file that step 2.3 created into VideoPose3D/data or just use the one I created from the ice scating video.
-4. When you run the program make sure you choose the right video file! The ice scating video is located at data/ice_cutted_cropped.mp4
+4. When you run the program make sure you choose the right video file! The ice scating video is located at InTheWildData/out_cutted.mp4
 5. Download the checkpoint file provided by the authors -  (Link)[https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin] - and move it to your VideoPose3D/checkpoint folder
 6. Now it is time to run the thing!
 
