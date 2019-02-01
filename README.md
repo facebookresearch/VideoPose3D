@@ -1,12 +1,8 @@
 # This is the 'in the wild' fork of 3D human pose estimation in video with temporal convolutions and semi-supervised training
 With this repository you can run the VideoPose3D code on your own data. run_wild.py enables you to run the code on 2D poses that you created yourself using detectron. I did not use CPN 2D pose refinemend as discussed [here](https://github.com/facebookresearch/VideoPose3D/issues/2#issuecomment-443502874). 
 
-
-<p align="center"><img src="images/scater_girl.gif" width="50%" alt="" /></p>
-
-
 To run this:
-If you want to run on your own videos you have to do step 1. and 2. otherwise go directly to 3. VideoPose3D part
+If you want to run this on your own videos you have to do step 1. and 2. otherwise go directly to 4. VideoPose3D part
 
 ### Detectron part
 1. Find a video you like and download it.
@@ -21,11 +17,11 @@ python infer_simple.py --cfg /detectron/videopose3d/e2e_keypoint_rcnn_R-101-FPN_
 demo/splitted_scating
 ```
 ### VideoPose3D part
-3. Move the data_2d_detections.npz file, that you created in step 2, into VideoPose3D/data or just use the one I created from the ice scating video.
-4. When you run the program make sure you choose the right video file! The ice scating video is located at InTheWildData/out_cutted.mp4
-5. Download the checkpoint file provided by the authors and move it to your VideoPose3D/checkpoint folder. [Help](https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin)
+4. Move the data_2d_detections.npz file, that you created in step 2, into VideoPose3D/data or just use the one I created from the ice scating video.
+5. When you run the program make sure you choose the right video file! The ice scating video is located at InTheWildData/out_cutted.mp4
+6. Download the checkpoint file provided by the authors and move it to your VideoPose3D/checkpoint folder. [Help](https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin)
 7. Prepare the data_3d_h36m.npz file in the data directory. [Help](https://github.com/facebookresearch/VideoPose3D/blob/master/DATASETS.md#setup-from-preprocessed-dataset)
-6. Now it is time to run the thing!
+8. Now it is time to run the thing!
 
 My arguments for VideoPose3D:
 ```
