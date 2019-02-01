@@ -1,5 +1,11 @@
 .idea/
-data/*
 checkpoint/*
-!data/tools/*
-!data/tools
+outputs/*
+!outputs/output_scater.mp4
+data/data_3d_h36m.npz
+data/own2DFiles/*
+
+
+
+__pycache__/
+*.py[cod]

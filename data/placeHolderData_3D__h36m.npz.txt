@@ -1,0 +1,1 @@
+create your data_3d_h36m.npz file as explained here: https://github.com/facebookresearch/VideoPose3D/blob/master/DATASETS.md#setup-from-preprocessed-dataset

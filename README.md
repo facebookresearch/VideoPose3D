@@ -1,36 +1,5 @@
-# This is the 'in the wild' fork of 3D human pose estimation in video with temporal convolutions and semi-supervised training
-With this repository you can run the VideoPose3D code on your own data. run_wild.py enables you to run the code on 2D poses that you created yourself using detectron. I did not use CPN 2D pose refinemend as discussed [here](https://github.com/facebookresearch/VideoPose3D/issues/2#issuecomment-443502874). 
-
-
-<p align="center"><img src="images/scater_girl.gif" width="75%" alt="" /></p>
-
-
-If you want to run on your own videos you have to do step 1. and 2. otherwise go directly to 6.
-
-1. Find a video you like and download it.
-2. Use ffmpeg to split it into individual frames in 'detectron_tools/' you can find the modified infer_simple.py file witch helps you to export the 2D poses. And the detectron_tools.txt that shows and example on how to use ffmpeg over your video.
-3. Download the [config-file](https://github.com/facebookresearch/Detectron/blob/master/configs/12_2017_baselines/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml) (specified by --cfg flag) you will need it for detectron.
-4. Download the weights file with the coco keypoints! More info [here](https://github.com/facebookresearch/VideoPose3D/issues/2)
-5. Replace pathToYourWeightFileFrom in detectron_tools/infer_simple and run detectron with your arguments:
- python infer_simple.py --cfg /pathToFile/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml --output-dir demo/scating_vis --image-ext jpg --wts
-	/pathToYourWeightFileFrom/keypoints_coco_2014_train:keypoints_coco_2014_valminusminival/model_final.pkl
-demo/splitted_scating
-
-6. Move the data_2d_detections.npz file that you created into VideoPose3D/data or just use the one I created from the ice scating video.
-7. When you run the program make sure you choose the right video file! The ice scating video is located at data/ice_cutted_cropped.mp4
-8. Download the checkpoint file provided by the authors -  (Link)[https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin] - and move it to your VideoPose3D/checkpoint folder
-9. Now it is time to run the thing!
-
-My arguments for VideoPose3D:
-
-python run_wild.py -k detections -arc 3,3,3,3,3 -c checkpoint --evaluate d-pt-243.bin --render --viz-subject S1 --viz-action Directions --viz-camera 0 --viz-output output_scater.mp4 --viz-size 5 --viz-downsample 1 --viz-video data/ice_cutted_cropped.mp4 --viz-skip 0 --viz-limit 240
-
-	
-
-
 # 3D human pose estimation in video with temporal convolutions and semi-supervised training
 <p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
-
 
 This is the implementation of the approach described in the paper:
 > Dario Pavllo, Christoph Feichtenhofer, David Grangier, and Michael Auli. [3D human pose estimation in video with temporal convolutions and semi-supervised training](https://arxiv.org/abs/1811.11742). In *arXiv*, 2018.
@@ -75,8 +44,8 @@ The pretrained models can be downloaded from AWS. Put `pretrained_h36m_cpn.bin` 
 ```sh
 mkdir checkpoint
 cd checkpoint
-wget https://s3.amazonaws.com/video-pose-3d/pretrained_h36m_cpn.bin
-wget https://s3.amazonaws.com/video-pose-3d/pretrained_humaneva15_detectron.bin
+wget https://dl.fbaipublicfiles.com/video-pose-3d/pretrained_h36m_cpn.bin
+wget https://dl.fbaipublicfiles.com/video-pose-3d/pretrained_humaneva15_detectron.bin
 cd ..
 ```
 
