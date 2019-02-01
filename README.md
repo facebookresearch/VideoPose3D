@@ -34,7 +34,7 @@ python run_wild -k detections -arc 3,3,3,3,3 -c checkpoint --evaluate d-pt-243.b
 
 ### Result
 
-![](https://user-images.githubusercontent.com/8737489/51989761-047e4300-24a8-11e9-94f8-5720591685af.gif)
+![](https://user-images.githubusercontent.com/8737489/52120837-f0f4e880-261d-11e9-8827-77a869f37d6a.gif)
 
 # 3D human pose estimation in video with temporal convolutions and semi-supervised training
 <p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
