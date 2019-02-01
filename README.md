@@ -32,6 +32,9 @@ My arguments for VideoPose3D:
 python run_wild -k detections -arc 3,3,3,3,3 -c checkpoint --evaluate d-pt-243.bin --render --viz-subject S1 --viz-action Directions --viz-video InTheWildData/out_cutted.mp4 --viz-camera 0 --viz-output output_scater.mp4 --viz-size 5 --viz-downsample 1 --viz-skip 9
 ```
 
+###Result
+
+![](https://user-images.githubusercontent.com/8737489/51989761-047e4300-24a8-11e9-94f8-5720591685af.gif)
 
 # 3D human pose estimation in video with temporal convolutions and semi-supervised training
 <p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
