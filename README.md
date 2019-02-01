@@ -14,7 +14,7 @@ If you want to run on your own videos you have to do step 1. and 2. otherwise go
 2. Run detecton:
 	- Download the [config-file](https://github.com/facebookresearch/Detectron/blob/master/configs/12_2017_baselines/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml) (specified by --cfg flag) you will need it for detectron.
 	- Download the weights file with the coco keypoints!
-	- Replace pathToYourWeightFileFrom2.2 and run detectron with your arguments:
+	- Replace pathToYourWeightFileFrom and run detectron with your arguments:
 ```
 python infer_simple.py --cfg /detectron/videopose3d/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml --output-dir demo/scating_vis --image-ext jpg --wts
 	/pathToYourWeightFileFrom2.2/keypoints_coco_2014_train:keypoints_coco_2014_valminusminival/model_final.pkl
