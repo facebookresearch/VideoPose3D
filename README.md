@@ -10,7 +10,7 @@ If you want to run on your own videos you have to do step 1. and 2. otherwise go
 
 ### Detectron part
 1. Find a video you like and download it.
-2. Use ffmpeg to split it into individual frames in 'detectron_tools/' you can find the modified infer_simple.py file witch helps you to export the 2D poses. And the detectron_tools.txt that shows and example on how to use ffmpeg over your video.
+2. Use ffmpeg to split it into individual frames in 'detectron_tools/' you can find the modified infer_simple.py file witch helps you to export the 2D poses. And the detectron_tools.txt that shows and example on how to use ffmpeg on your video.
 2. Run detecton:
 	2.1 Download the [config-file](https://github.com/facebookresearch/Detectron/blob/master/configs/12_2017_baselines/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml) (specified by --cfg flag) you will need it for detectron.
 	2.2 Download the weights file with the coco keypoints!
