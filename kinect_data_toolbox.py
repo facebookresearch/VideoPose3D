@@ -65,22 +65,6 @@ def draw_fig(path, savePath= "/home/narvis/Dev/data_kinect/kinect _fig_vis_lessJ
         plt.show()
     plt.close()
 
-def compare(lsorted):
-    dir_vp3d = "/home/narvis/Dev/data_kinect/compare_vp3_poses/out_3D_vp3d.npz"
-    dir_kinect = "/home/narvis/Dev/data_kinect/pose_data/"
-    poses_vp3d = np.load(dir_vp3d)
-
-    poses_kinect = []
-    for i in lsorted:
-        path = os.path.join(dir_kinect, i)
-        x, y, z = loadtxt(path)
-        poses_kinect.append([x,y,z])
-
-    poses_vp3d = poses_vp3d["arr_0"]
-    poses_kinect = np.array(poses_kinect)
-    print("Shape of poses_vp3d: {}; Shape of poses_kinect: {}".format(poses_vp3d.shape, poses_kinect.shape))
-
-
 
 def visualizeKinect():
     dir = "/home/narvis/Dev/data_kinect/pose_data/"
@@ -99,6 +83,85 @@ def visualizeKinect():
 
     print("Done")
 
+
+def viz2figs(kinect_pose, vp3d_pose):
+    # make comparable --> transform vp3d poses to kinect
+    vp3d_pose = vp3d_pose[:, [0, 7, 9, 10, 14, 15, 16, 11, 12, 13, 1, 2, 3, 4, 5, 6, 8]]
+    for i in range(0,17):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('xlabel')
+        ax.set_ylabel('zlabel')
+        ax.set_zlabel('ylabel')
+        ax.set_xlim([-1, 1])
+        ax.set_ylim([-1, 1])
+        ax.set_zlim([-1, 1])
+
+        index = i
+        ax.scatter(kinect_pose[0][index], kinect_pose[1][index], zs=kinect_pose[2][index], zdir='y', s=20, c='blue', depthshade=True, marker='s')
+        ax.scatter(vp3d_pose[0][index] * -1, vp3d_pose[1][index] , zs=vp3d_pose[2][index]*-1, zdir='y', s=20, c='blue', depthshade=True, marker='s')
+        kinect_pose_WoIndex = np.delete(kinect_pose, index, axis =1)
+        vp3d_pose_WoIndex = np.delete(vp3d_pose, index, axis=1)
+
+        ax.scatter(kinect_pose_WoIndex[0], kinect_pose_WoIndex[1], zs=kinect_pose_WoIndex[2], zdir='y', s=20, c='red', depthshade=True)
+        ax.scatter(vp3d_pose_WoIndex[0] * -1, vp3d_pose_WoIndex[1] , zs=vp3d_pose_WoIndex[2] *-1, zdir='y', s=20, c='green', depthshade=True)
+
+        plt.show()
+        plt.close()
+
+def compare(lsorted):
+    dir_vp3d = "/home/narvis/Dev/data_kinect/compare_vp3_poses/out_3D_vp3d.npz"
+    dir_kinect = "/home/narvis/Dev/data_kinect/pose_data/"
+    poses_vp3d = np.load(dir_vp3d)
+
+    poses_kinect = []
+    for i in lsorted:
+        path = os.path.join(dir_kinect, i)
+        x, y, z = loadtxt(path)
+        poses_kinect.append([x,y,z])
+
+    poses_vp3d = poses_vp3d["arr_0"]
+    #kinect started with frame 22 we need to cut poses_vp3d to be able to compare
+    poses_vp3d = poses_vp3d[22:]
+    poses_vp3d = np.transpose(poses_vp3d, [0, 2, 1])
+    poses_vp3d = poses_vp3d[:,[0,2,1], :]
+    poses_kinect = np.array(poses_kinect)
+
+    assert(poses_vp3d.shape == poses_kinect.shape)
+    print("Shape of poses_vp3d: {}; Shape of poses_kinect: {}".format(poses_vp3d.shape, poses_kinect.shape))
+    #print("Head vp3D: {}; Head Kinect: {}".format(poses_vp3d, poses_kinect[0][3]))
+
+
+    first_pose_vp3d = poses_vp3d[0]
+    first_pose_kinect = poses_kinect[0]
+
+
+    vp3d_mean = np.mean(first_pose_vp3d, axis=1)
+    kinect_mean = np.mean(first_pose_kinect, axis=1)
+
+    first_pose_vp3d = np.transpose(np.transpose(first_pose_vp3d) - vp3d_mean)
+    first_pose_kinect = np.transpose(np.transpose(first_pose_kinect) - kinect_mean)
+
+
+
+    viz2figs(first_pose_kinect, first_pose_vp3d)
+    print("tese")
+
+
+def test():
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel('xlabel')
+    ax.set_ylabel('zlabel')
+    ax.set_zlabel('ylabel')
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-1, 1])
+    ax.set_zlim([-1, 1])
+
+    ax.scatter([0],[0],[1], zdir='y', s=20, c='green', depthshade=True)
+    plt.show()
+    plt.close()
+
 def  main():
     dir = "/home/narvis/Dev/data_kinect/pose_data/"
     directory = os.fsencode(dir)
@@ -111,7 +174,7 @@ def  main():
     lsorted = sorted(allFiles, key=lambda x: int(x.split('_')[1]))
 
     compare(lsorted)
-
+    #test()
 
 
 
