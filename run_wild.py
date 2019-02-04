@@ -78,7 +78,7 @@ keypoints = keypoints['positions_2d'].item()
 
 subject = 'S1'
 
-action = 'Directions'
+action = 'Directions 1'
 
 #for subject in keypoints.keys():
 #    for action in keypoints[subject]:
@@ -88,7 +88,7 @@ action = 'Directions'
 #            kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
 #            keypoints[subject][action][cam_idx] = kps
 
-width_of = 1080
+width_of = 1920
 height_of = 1080
 
 for cam_idx, kps in enumerate(keypoints[subject][action]):
@@ -111,7 +111,7 @@ def fetch(subjects, action_filter=None, subset=1, parse_3d_poses=True):
     out_poses_2d = []
     out_camera_params = []
     subject = 'S1'
-    action = 'Directions'
+    action = 'Directions 1'
 
                 
     poses_2d = keypoints[subject][action]
@@ -254,7 +254,7 @@ def evaluate(test_generator, action=None, return_predictions=False):
 
 if args.render:
     print('Rendering...')
-    my_action = 'Directions'
+    my_action = 'Directions 1'
     #input_keypoints = keypoints[args.viz_subject][args.viz_action][args.viz_camera].copy()
     input_keypoints = keypoints[args.viz_subject][my_action][args.viz_camera].copy()
     if args.viz_subject in dataset.subjects() and args.viz_action in dataset[args.viz_subject]:
@@ -298,7 +298,9 @@ if args.render:
     
     input_keypoints = image_coordinates(input_keypoints[..., :2], w=width_of, h=height_of)
 
-    manual_fps = 25
+    manual_fps = 29
+
+    np.savez('out_3D_vp3d', anim_output['Reconstruction'])
 
     from common.visualization import render_animation
     render_animation(input_keypoints, anim_output,
@@ -306,7 +308,7 @@ if args.render:
                      limit=args.viz_limit, downsample=args.viz_downsample, size=args.viz_size,
                      input_video_path=args.viz_video, viewport=(cam['res_w'], cam['res_h']),
                      input_video_skip=args.viz_skip)
-    
+
 else:
     print('Evaluating...')
     all_actions = {}
@@ -345,7 +347,7 @@ else:
                 out_poses_2d[i] = out_poses_2d[i][::stride]
                 if out_poses_3d is not None:
                     out_poses_3d[i] = out_poses_3d[i][::stride]
-        
+
         return out_poses_3d, out_poses_2d
 
     def run_evaluation(actions, action_filter=None):
