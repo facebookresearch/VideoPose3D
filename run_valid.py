@@ -31,9 +31,10 @@ def loadtxt(path):
         y = np.array([float(l.split(" ")[2]) for l in lines])
         z = np.array([float(l.split(" ")[3]) for l in lines])
         selection = [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 15, 16, 17, 19, 20]
-        x = x[selection]
-        y = y[selection]
-        z = z[selection]
+        selection2 = [0,10, 11, 12, 13, 14, 15, 1, 16, 2, 3, 7, 8, 9, 4, 5, 6]
+        x = x[selection][selection2]
+        y = y[selection][selection2]
+        z = z[selection][selection2]
     return x, y, z
 
 def loadKinect(dir = "/home/narvis/Dev/data_kinect/pose_data/"):
@@ -54,6 +55,20 @@ def loadKinect(dir = "/home/narvis/Dev/data_kinect/pose_data/"):
 
     poses_kinect = np.array(poses_kinect)
     return poses_kinect
+
+from rigid_trans_test import vizfigs, umeyama
+
+def transformKinectForVp3D(kinectposes, Vp3Dposes):
+    index =  325
+    f_Vp3Dpose = Vp3Dposes[index]
+    f_kinectpose = kinectposes[index]
+    vizfigs(np.transpose(f_kinectpose), np.transpose(f_Vp3Dpose))
+    c, R, t = umeyama(f_kinectpose, f_Vp3Dpose)
+    kin_transformed = f_kinectpose.dot(c * R) + t
+    vizfigs(np.transpose(kin_transformed), np.transpose(f_Vp3Dpose))
+    new_kinectposes = kinectposes[:].dot(c * R) +t
+    return new_kinectposes, Vp3Dposes
+
 
 
 print('Loading dataset...')
@@ -275,8 +290,10 @@ prediction = camera_to_world(prediction, R=rot, t=0)
 prediction[:, :, 2] -= np.min(prediction[:, :, 2])
 
 predictionsKinect = loadKinect(dir = "/home/narvis/study/TobiKinectRawDataTest/P1A3")
+predictionsKinect, prediction = transformKinectForVp3D(predictionsKinect, prediction)
 
-
+from rigid_trans_test import vizfigs
+vizfigs(np.transpose(predictionsKinect[150]), np.transpose(prediction[150]))
 anim_output = {'Video3D': prediction}
 
 

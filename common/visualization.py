@@ -231,17 +231,20 @@ def render_animation_valid(input_pose_kinect, keypoints, poses, skeleton, fps, b
         trajectories.append(data[:, 0, [0, 1]])
     poses = list(poses.values())
 
+    lines_kinect=[]
     axk = fig.add_subplot(1,3,3, projection='3d')
-    axk.set_xlabel('xlabel')
-    axk.set_ylabel('zlabel')
-    axk.set_zlabel('ylabel')
-    axk.set_xlim([-2, 0])
-    axk.set_ylim([-7, -5])
-    axk.set_zlim([2, 4])
+    axk.view_init(elev=15., azim=azim)
+    axk.set_xticklabels([])
+    axk.set_yticklabels([])
+    axk.set_zticklabels([])
+    axk.set_xlim3d([-radius / 2, radius / 2])
+    axk.set_zlim3d([0, radius])
+    axk.set_ylim3d([-radius / 2, radius / 2])
+    axk.set_aspect('equal')
     axk.set_title('Kinect')
-    axk.dist=10
-    axk.view_init(elev=15., azim=-100)
+    axk.dist=12.5
 
+    kinect_parents = [1, 16, 3, -1 , 16, 4, 5, 16, 7, 8, 0, 10, 11, 0, 13, 14, 2 ]
 
     # Decode video
     if input_image_folder is None:
@@ -261,8 +264,8 @@ def render_animation_valid(input_pose_kinect, keypoints, poses, skeleton, fps, b
             b, g, r = cv2.split(_image)  # get b,g,r
             rgb_img = cv2.merge([r, g, b])  # switch it to rgb
             all_frames.append(rgb_img)
-            if(i == 10):
-                return
+            #if(i == 10):
+             #   break
 
 
     if downsample > 1:
@@ -295,51 +298,64 @@ def render_animation_valid(input_pose_kinect, keypoints, poses, skeleton, fps, b
 
         # Update 2D poses
         if not initialized:
+            index_k = 0
             image = ax_in.imshow(all_frames[i], aspect='equal')
 
             for j, j_parent in enumerate(parents):
-                if j_parent == -1:
-                    continue
 
-                if len(parents) == keypoints.shape[1] and 1 == 2:
-                    # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
-                    lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-                                            [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
+                if j_parent != -1:
+                    if len(parents) == keypoints.shape[1] and 1 == 2:
+                        # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
+                        lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
+                                                [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
+                    col = 'red' if j in skeleton.joints_right() else 'black'
+                    for n, ax in enumerate(ax_3d):
+                        pos = poses[n][i]
+                        lines_3d[n].append(ax.plot([pos[j, 0], pos[j_parent, 0]],
+                                                   [pos[j, 1], pos[j_parent, 1]],
+                                                   [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
 
-                col = 'red' if j in skeleton.joints_right() else 'black'
-                for n, ax in enumerate(ax_3d):
-                    pos = poses[n][i]
-                    lines_3d[n].append(ax.plot([pos[j, 0], pos[j_parent, 0]],
-                                               [pos[j, 1], pos[j_parent, 1]],
-                                               [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
+
+                    col_kin = 'red' if index_k in [4,5,6,10,11,12] else 'black'
+                    kin_pos = input_pose_kinect[i]
+                    lines_kinect.append(axk.plot([kin_pos[j,0], kin_pos[j_parent,0]],
+                                                [kin_pos[j, 1], kin_pos[j_parent, 1]],
+                                                [kin_pos[j, 2], kin_pos[j_parent, 2]], zdir='z', c=col))
+                    index_k+=1
+
+
 
             points = ax_in.scatter(*keypoints[i].T, 5, color='red', edgecolors='white', zorder=10)
-
-            #points2 = axk.scatter(np.reshape(input_pose_kinect[i,:,0],(17,1)), np.reshape(input_pose_kinect[i,:,1],(17,1)), zs=np.reshape(input_pose_kinect[i,:,2],(17,1)), zdir='y', s=20, c='blue', depthshade=True, marker='s')
-            points2 = axk.scatter(input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], zs=input_pose_kinect[i,:,1], zdir='y', s=20, c='blue', depthshade=True, marker='s')
+            #points2 = axk.scatter(input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], zs=input_pose_kinect[i,:,1], zdir='y', s=20, c='blue', depthshade=True, marker='s')
 
 
             initialized = True
         else:
             image.set_data(all_frames[i])
-
+            index_k = 0
             for j, j_parent in enumerate(parents):
-                if j_parent == -1:
-                    continue
+                if j_parent != -1:
+                    if len(parents) == keypoints.shape[1] and 1 == 2:
+                        lines[j - 1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
+                                                 [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
 
-                if len(parents) == keypoints.shape[1] and 1 == 2:
-                    lines[j - 1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-                                             [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
+                    for n, ax in enumerate(ax_3d):
+                        pos = poses[n][i]
+                        lines_3d[n][j - 1][0].set_xdata([pos[j, 0], pos[j_parent, 0]])
+                        lines_3d[n][j - 1][0].set_ydata([pos[j, 1], pos[j_parent, 1]])
+                        lines_3d[n][j - 1][0].set_3d_properties([pos[j, 2], pos[j_parent, 2]], zdir='z')
 
-                for n, ax in enumerate(ax_3d):
-                    pos = poses[n][i]
-                    lines_3d[n][j - 1][0].set_xdata([pos[j, 0], pos[j_parent, 0]])
-                    lines_3d[n][j - 1][0].set_ydata([pos[j, 1], pos[j_parent, 1]])
-                    lines_3d[n][j - 1][0].set_3d_properties([pos[j, 2], pos[j_parent, 2]], zdir='z')
+                    kin_pos = input_pose_kinect[i]
+                    lines_kinect[j-1][0].set_xdata([kin_pos[j, 0], kin_pos[j_parent, 0]])
+                    lines_kinect[j-1][0].set_ydata([kin_pos[j, 1], kin_pos[j_parent, 1]])
+                    lines_kinect[j-1][0].set_3d_properties([kin_pos[j, 2], kin_pos[j_parent, 2]], zdir='z')
+                    index_k += 1
 
 
 
-            points2._offsets3d  = (input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], input_pose_kinect[i,:,1])
+
+
+            #points2._offsets3d  = (input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], input_pose_kinect[i,:,1])
             points.set_offsets(keypoints[i])
 
 
@@ -348,7 +364,7 @@ def render_animation_valid(input_pose_kinect, keypoints, poses, skeleton, fps, b
 
     fig.tight_layout()
     #limit
-    anim = FuncAnimation(fig, update_video, frames=np.arange(0, 10), interval=1000 / fps, repeat=False)
+    anim = FuncAnimation(fig, update_video, frames=np.arange(0, limit), interval=1000 / fps, repeat=False)
     if output.endswith('.mp4'):
         Writer = writers['ffmpeg']
         writer = Writer(fps=fps, metadata={}, bitrate=bitrate)
