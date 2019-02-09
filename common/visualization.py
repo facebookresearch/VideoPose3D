@@ -7,12 +7,14 @@
 
 import matplotlib
 matplotlib.use('Agg')
-
+import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, writers
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import subprocess as sp
+import glob
+import cv2
 
 def get_resolution(filename):
     command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
@@ -185,3 +187,177 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
     else:
         raise ValueError('Unsupported output format (only .mp4 and .gif are supported)')
     plt.close()
+
+
+def render_animation_valid(input_pose_kinect, keypoints, poses, skeleton, fps, bitrate, azim, output, viewport,
+                     limit=-1, downsample=1, size=6, input_image_folder=None, input_video_skip=0):
+    """
+    input_pose_kinect
+    TODO
+    Render an animation. The supported output modes are:
+     -- 'interactive': display an interactive figure
+                       (also works on notebooks if associated with %matplotlib inline)
+     -- 'html': render the animation as HTML5 video. Can be displayed in a notebook using HTML(...).
+     -- 'filename.mp4': render and export the animation as an h264 video (requires ffmpeg).
+     -- 'filename.gif': render and export the animation a gif file (requires imagemagick).
+    """
+    plt.ioff()
+    fig = plt.figure(figsize=(size * (2 + len(poses)), size))
+    ax_in = fig.add_subplot(1, 3, 1)
+    ax_in.get_xaxis().set_visible(False)
+    ax_in.get_yaxis().set_visible(False)
+    ax_in.set_axis_off()
+    ax_in.set_title('Input with 2D points')
+
+
+    ax_3d = []
+    lines_3d = []
+    trajectories = []
+    radius = 1.7
+    for index, (title, data) in enumerate(poses.items()):
+        ax = fig.add_subplot(1, 3, index + 2, projection='3d')
+        ax.view_init(elev=15., azim=azim)
+        ax.set_xlim3d([-radius / 2, radius / 2])
+        ax.set_zlim3d([0, radius])
+        ax.set_ylim3d([-radius / 2, radius / 2])
+        ax.set_aspect('equal')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
+        ax.dist = 12.5
+        ax.set_title(title)  # , pad=35
+        ax_3d.append(ax)
+        lines_3d.append([])
+        trajectories.append(data[:, 0, [0, 1]])
+    poses = list(poses.values())
+
+    axk = fig.add_subplot(1,3,3, projection='3d')
+    axk.set_xlabel('xlabel')
+    axk.set_ylabel('zlabel')
+    axk.set_zlabel('ylabel')
+    axk.set_xlim([-2, 0])
+    axk.set_ylim([-7, -5])
+    axk.set_zlim([2, 4])
+    axk.set_title('Kinect')
+    axk.dist=10
+    axk.view_init(elev=15., azim=-100)
+
+
+    # Decode video
+    if input_image_folder is None:
+        # Black background
+        all_frames = np.zeros((keypoints.shape[0], viewport[1], viewport[0]), dtype='uint8')
+    else:
+        # Load images
+        all_frames = []
+        if os.path.isdir(input_image_folder):
+            im_list = glob.iglob(input_image_folder + '/*' + '.bmp')
+        else:
+            im_list = [input_image_folder]
+        im_list = sorted(im_list)
+        for i, im_name in enumerate(im_list):
+            print("Index: {} - Image: {}".format(i, im_name))
+            _image = cv2.imread(im_name)
+            b, g, r = cv2.split(_image)  # get b,g,r
+            rgb_img = cv2.merge([r, g, b])  # switch it to rgb
+            all_frames.append(rgb_img)
+            if(i == 10):
+                return
+
+
+    if downsample > 1:
+        keypoints = downsample_tensor(keypoints, downsample)
+        all_frames = downsample_tensor(np.array(all_frames), downsample).astype('uint8')
+        for idx in range(len(poses)):
+            poses[idx] = downsample_tensor(poses[idx], downsample)
+            trajectories[idx] = downsample_tensor(trajectories[idx], downsample)
+        fps /= downsample
+
+    initialized = False
+    image = None
+    lines = []
+    points = None
+    points2 = None
+
+    if limit < 1:
+        limit = len(all_frames)
+    else:
+        limit = min(limit, len(all_frames))
+
+    parents = skeleton.parents()
+
+    def update_video(i):
+        nonlocal initialized, image, lines, points, points2
+
+        for n, ax in enumerate(ax_3d):
+            ax.set_xlim3d([-radius / 2 + trajectories[n][i, 0], radius / 2 + trajectories[n][i, 0]])
+            ax.set_ylim3d([-radius / 2 + trajectories[n][i, 1], radius / 2 + trajectories[n][i, 1]])
+
+        # Update 2D poses
+        if not initialized:
+            image = ax_in.imshow(all_frames[i], aspect='equal')
+
+            for j, j_parent in enumerate(parents):
+                if j_parent == -1:
+                    continue
+
+                if len(parents) == keypoints.shape[1] and 1 == 2:
+                    # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
+                    lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
+                                            [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
+
+                col = 'red' if j in skeleton.joints_right() else 'black'
+                for n, ax in enumerate(ax_3d):
+                    pos = poses[n][i]
+                    lines_3d[n].append(ax.plot([pos[j, 0], pos[j_parent, 0]],
+                                               [pos[j, 1], pos[j_parent, 1]],
+                                               [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
+
+            points = ax_in.scatter(*keypoints[i].T, 5, color='red', edgecolors='white', zorder=10)
+
+            #points2 = axk.scatter(np.reshape(input_pose_kinect[i,:,0],(17,1)), np.reshape(input_pose_kinect[i,:,1],(17,1)), zs=np.reshape(input_pose_kinect[i,:,2],(17,1)), zdir='y', s=20, c='blue', depthshade=True, marker='s')
+            points2 = axk.scatter(input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], zs=input_pose_kinect[i,:,1], zdir='y', s=20, c='blue', depthshade=True, marker='s')
+
+
+            initialized = True
+        else:
+            image.set_data(all_frames[i])
+
+            for j, j_parent in enumerate(parents):
+                if j_parent == -1:
+                    continue
+
+                if len(parents) == keypoints.shape[1] and 1 == 2:
+                    lines[j - 1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
+                                             [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
+
+                for n, ax in enumerate(ax_3d):
+                    pos = poses[n][i]
+                    lines_3d[n][j - 1][0].set_xdata([pos[j, 0], pos[j_parent, 0]])
+                    lines_3d[n][j - 1][0].set_ydata([pos[j, 1], pos[j_parent, 1]])
+                    lines_3d[n][j - 1][0].set_3d_properties([pos[j, 2], pos[j_parent, 2]], zdir='z')
+
+
+
+            points2._offsets3d  = (input_pose_kinect[i,:,0], input_pose_kinect[i,:,2], input_pose_kinect[i,:,1])
+            points.set_offsets(keypoints[i])
+
+
+
+        print('{}/{}      '.format(i, limit), end='\r')
+
+    fig.tight_layout()
+    #limit
+    anim = FuncAnimation(fig, update_video, frames=np.arange(0, 10), interval=1000 / fps, repeat=False)
+    if output.endswith('.mp4'):
+        Writer = writers['ffmpeg']
+        writer = Writer(fps=fps, metadata={}, bitrate=bitrate)
+        anim.save(output, writer=writer)
+    elif output.endswith('.gif'):
+        anim.save(output, dpi=80, writer='imagemagick')
+    elif output.endswith('.png'):
+        anim.save(output, writer='imagemagick')
+    else:
+        raise ValueError('Unsupported output format (only .mp4 and .gif are supported)')
+    plt.close()
+    print("Done thanks for running!!!")
