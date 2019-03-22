@@ -2,7 +2,7 @@
 With this repository you can run the VideoPose3D code on your own data. run_wild.py enables you to run the code on 2D poses that you created yourself using detectron. I did not use CPN 2D pose refinemend as discussed [here](https://github.com/facebookresearch/VideoPose3D/issues/2#issuecomment-443502874). 
 
 To run this:
-If you want to run this on your own videos you have to do step 1. and 2. otherwise go directly to 4. VideoPose3D part
+If you want to run this on your own videos you have to do step 1, 2 and 3 otherwise go directly to 4 the VideoPose3D part.
 
 ### Detectron part
 1. Find a video you like and download it.
