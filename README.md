@@ -12,7 +12,7 @@ If you want to run this on your own videos you have to do step 1, 2 and 3 otherw
 	- Replace pathToYourWeightFileFrom and run detectron with your arguments:
 ```
 python infer_simple.py --cfg /detectron/videopose3d/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml --output-dir demo/scating_vis --image-ext jpg --wts
-	/pathToYourWeightFileFrom2.2/keypoints_coco_2014_train:keypoints_coco_2014_valminusminival/model_final.pkl
+	/pathToYourWeightFile/keypoints_coco_2014_train:keypoints_coco_2014_valminusminival/model_final.pkl
 demo/splitted_scating
 ```
 ### VideoPose3D part
