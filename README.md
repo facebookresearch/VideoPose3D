@@ -31,6 +31,12 @@ python run_wild -k detections -arc 3,3,3,3,3 -c checkpoint --evaluate d-pt-243.b
 
 ![](https://user-images.githubusercontent.com/8737489/52120837-f0f4e880-261d-11e9-8827-77a869f37d6a.gif)
 
+### Study
+You can find a comparison between the method presented by pavllo et al. and the Kinect in my small [study](https://tobiascz.github.io/Results3DHumanPoseEstimation/)
+
+# End of "in the wild" fork
+---
+
 # 3D human pose estimation in video with temporal convolutions and semi-supervised training
 <p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
 
@@ -43,6 +49,7 @@ More demos are available at https://dariopavllo.github.io/VideoPose3D
 <p align="center"><img src="images/demo_yt.gif" width="70%" alt="" /></p>
 
 ![](images/demo_temporal.gif)
+
 
 ### Results on Human3.6M
 Under Protocol 1 (mean per-joint position error) and Protocol 2 (mean-per-joint position error after rigid alignment).
