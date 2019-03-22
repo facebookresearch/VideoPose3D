@@ -88,7 +88,7 @@ action = 'Directions 1'
 #            kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
 #            keypoints[subject][action][cam_idx] = kps
 
-width_of = 1920
+width_of = 1080
 height_of = 1080
 
 for cam_idx, kps in enumerate(keypoints[subject][action]):
