@@ -9,7 +9,7 @@ If you want to run this on your own videos you have to do step 1. and 2. otherwi
 2. Use ffmpeg to split it into individual frames in 'detectron_tools/' you can find the modified infer_simple.py file witch helps you to export the 2D poses. And the detectron_tools.txt that shows and example on how to use ffmpeg on your video.
 2. Run detecton:
 	- Download the [config-file](https://github.com/facebookresearch/Detectron/blob/master/configs/12_2017_baselines/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml) (specified by --cfg flag) you will need it for detectron.
-	- Download the weights file with the coco keypoints!
+	- Download the weights file with the coco keypoints! ([weights file](https://github.com/tobiascz/VideoPose3D/issues/2))
 	- Replace pathToYourWeightFileFrom and run detectron with your arguments:
 ```
 python infer_simple.py --cfg /detectron/videopose3d/e2e_keypoint_rcnn_R-101-FPN_s1x.yaml --output-dir demo/scating_vis --image-ext jpg --wts
@@ -21,7 +21,7 @@ demo/splitted_scating
 5. When you run the program make sure you choose the right video file! The ice scating video is located at InTheWildData/out_cutted.mp4
 6. Download the checkpoint file provided by the authors and move it to your VideoPose3D/checkpoint folder. [Help](https://s3.amazonaws.com/video-pose-3d/d-pt-243.bin)
 7. Prepare the data_3d_h36m.npz file in the data directory. [Help](https://github.com/facebookresearch/VideoPose3D/blob/master/DATASETS.md#setup-from-preprocessed-dataset)
-8. Now it is time to run the thing!
+8. Time to run!
 
 My arguments for VideoPose3D:
 ```
