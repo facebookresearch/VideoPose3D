@@ -192,7 +192,7 @@ def main(args):
 
     dictionarry_keypoints={'S1': {'Directions 1' : np.asarray([glob_keypoints])}}
     metadata = {'layout_name': 'h36m', 'num_joints': 17, 'keypoints_symmetry': [[4, 5, 6, 11, 12, 13], [1, 2, 3, 14, 15, 16]]}
-    np.savez(os.path.join('/home/narvis/Dev/VideoPose3D/data', "data_2d_detections.npz"), metadata=metadata, positions_2d=dictionarry_keypoints)
+    #np.savez(os.path.join('/home/narvis/Dev/VideoPose3D/data', "data_2d_detections.npz"), metadata=metadata, positions_2d=dictionarry_keypoints)
     np.savez(os.path.join(args.output_dir, "data_2d_detections.npz"), metadata=metadata, positions_2d=dictionarry_keypoints)
     #Splitting Command:  ffmpeg -i ice_cutted_cropped.mp4 -r 25/1 splitted_scating/output%04d.png
     # Video Link: https://www.youtube.com/watch?v=ke0iusvydl8
