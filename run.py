@@ -753,7 +753,7 @@ else:
             action_name = action.split(' ')[0]
             if action_name not in all_actions:
                 all_actions[action_name] = []
-            if action_name not in all_actions_by_subject:
+            if action_name not in all_actions_by_subject[subject]:
                 all_actions_by_subject[subject][action_name] = []
             all_actions[action_name].append((subject, action))
             all_actions_by_subject[subject][action_name].append((subject, action))
