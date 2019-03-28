@@ -2,7 +2,7 @@
 <p align="center"><img src="images/convolutions_anim.gif" width="50%" alt="" /></p>
 
 This is the implementation of the approach described in the paper:
-> Dario Pavllo, Christoph Feichtenhofer, David Grangier, and Michael Auli. [3D human pose estimation in video with temporal convolutions and semi-supervised training](https://arxiv.org/abs/1811.11742). In *arXiv*, 2018.
+> Dario Pavllo, Christoph Feichtenhofer, David Grangier, and Michael Auli. [3D human pose estimation in video with temporal convolutions and semi-supervised training](https://arxiv.org/abs/1811.11742). In Conference on Computer Vision and Pattern Recognition (CVPR), 2019.
 
 More demos are available at https://dariopavllo.github.io/VideoPose3D
 
@@ -107,11 +107,10 @@ The script can also export MP4 videos, and supports a variety of parameters (e.g
 This work is licensed under CC BY-NC. See LICENSE for details. Third-party datasets are subject to their respective licenses.
 If you use our code/models in your research, please cite our paper:
 ```
-@article{pavllo:videopose3d:2018,
+@inproceedings{pavllo:videopose3d:2019,
   title={3D human pose estimation in video with temporal convolutions and semi-supervised training},
   author={Pavllo, Dario and Feichtenhofer, Christoph and Grangier, David and Auli, Michael},
-  journal={arXiv},
-  volume={abs/1811.11742},
-  year={2018}
+  booktitle={Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2019}
 }
 ```
