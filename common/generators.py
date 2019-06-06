@@ -32,41 +32,46 @@ class ChunkedGenerator:
                  shuffle=True, random_seed=1234,
                  augment=False, kps_left=None, kps_right=None, joints_left=None, joints_right=None,
                  endless=False):
+        
         assert poses_3d is None or len(poses_3d) == len(poses_2d), (len(poses_3d), len(poses_2d))
         assert cameras is None or len(cameras) == len(poses_2d)
-    
         # Build lineage info
+        '''
+        pairs 一共1200对，600对flip的，([0~599],[x = 0~2498],[x+1],T/F)
+        '''
         pairs = [] # (seq_idx, start_frame, end_frame, flip) tuples
         for i in range(len(poses_2d)):
             assert poses_3d is None or poses_3d[i].shape[0] == poses_3d[i].shape[0]
-            n_chunks = (poses_2d[i].shape[0] + chunk_length - 1) // chunk_length
-            offset = (n_chunks * chunk_length - poses_2d[i].shape[0]) // 2
-            bounds = np.arange(n_chunks+1)*chunk_length - offset
-            augment_vector = np.full(len(bounds - 1), False, dtype=bool)
+            n_chunks = (poses_2d[i].shape[0] + chunk_length - 1) // chunk_length #1384
+            offset = (n_chunks * chunk_length - poses_2d[i].shape[0]) // 2 #0
+            bounds = np.arange(n_chunks+1)*chunk_length - offset # [0,1,...,1384]
+            augment_vector = np.full(len(bounds - 1), False, dtype=bool) # [F,F,..,F] (1384,)
             pairs += zip(np.repeat(i, len(bounds - 1)), bounds[:-1], bounds[1:], augment_vector)
             if augment:
                 pairs += zip(np.repeat(i, len(bounds - 1)), bounds[:-1], bounds[1:], ~augment_vector)
 
         # Initialize buffers
+        
         if cameras is not None:
-            self.batch_cam = np.empty((batch_size, cameras[0].shape[-1]))
+            self.batch_cam = np.empty((batch_size, cameras[0].shape[-1])) #(1024,9)
         if poses_3d is not None:
             self.batch_3d = np.empty((batch_size, chunk_length, poses_3d[0].shape[-2], poses_3d[0].shape[-1]))
         self.batch_2d = np.empty((batch_size, chunk_length + 2*pad, poses_2d[0].shape[-2], poses_2d[0].shape[-1]))
 
-        self.num_batches = (len(pairs) + batch_size - 1) // batch_size
-        self.batch_size = batch_size
+        self.num_batches = (len(pairs) + batch_size - 1) // batch_size #3047
+
+        self.batch_size = batch_size #1024
         self.random = np.random.RandomState(random_seed)
-        self.pairs = pairs
-        self.shuffle = shuffle
-        self.pad = pad
-        self.causal_shift = causal_shift
-        self.endless = endless
+        self.pairs = pairs  #(599, 2498, 2499, True/f) (第x个action，len(x), len(x)+1, t/f)
+        self.shuffle = shuffle #t
+        self.pad = pad #121
+        self.causal_shift = causal_shift #0
+        self.endless = endless #f
         self.state = None
         
         self.cameras = cameras
         self.poses_3d = poses_3d
-        self.poses_2d = poses_2d
+        self.poses_2d = poses_2d # 600 * [ 1383, 17, 2 ]
         
         self.augment = augment
         self.kps_left = kps_left
@@ -95,27 +100,60 @@ class ChunkedGenerator:
             return 0, pairs
         else:
             return self.state
+    def remove_left_hand(self):
+        return
     
+    def random_romove(self, seq_2d, frames, pitchs):
+        start_frame = np.random.choice((self.pad * 2 + 1)//5, pitchs, False)
+        start_frame = np.sort(start_frame) * 5
+        end_frame = start_frame + frames   
+
+        for i in range(pitchs - 1):
+            if end_frame[i] > start_frame[i+1]:
+                end_frame[i] = start_frame[i+1]
+                
+            invalid_point = np.random.choice(17, np.random.choice(3) + 4, False)
+            invalid_point = np.sort(invalid_point) 
+            seq_2d[start_frame[i]:end_frame[i],invalid_point,:] = 0
+
+        if end_frame[-1] > self.pad * 2:
+            end_frame[-1] = self.pad * 2
+        
+        invalid_point = np.random.choice(17, np.random.choice(3) + 4, False)
+        invalid_point = np.sort(invalid_point) 
+        seq_2d[start_frame[-1]:end_frame[-1],invalid_point,:] = 0
+
+        # print(np.arange(self.pad * 2 + 1)[start_frame[0]:end_frame[0]])
+        return seq_2d
+
     def next_epoch(self):
         enabled = True
         while enabled:
             start_idx, pairs = self.next_pairs()
             for b_i in range(start_idx, self.num_batches):
                 chunks = pairs[b_i*self.batch_size : (b_i+1)*self.batch_size]
+                # 1024个训练size
                 for i, (seq_i, start_3d, end_3d, flip) in enumerate(chunks):
+                    '''
+                    例如 1797是3dpose起点，1676-1919就是终点
+                    '''
                     start_2d = start_3d - self.pad - self.causal_shift
                     end_2d = end_3d + self.pad - self.causal_shift
 
                     # 2D poses
+                    # 下面的操作是作padding
                     seq_2d = self.poses_2d[seq_i]
                     low_2d = max(start_2d, 0)
                     high_2d = min(end_2d, seq_2d.shape[0])
                     pad_left_2d = low_2d - start_2d
                     pad_right_2d = end_2d - high_2d
+
+                    seq_2d = self.random_romove(seq_2d[low_2d:high_2d], 25, 4)
+
                     if pad_left_2d != 0 or pad_right_2d != 0:
-                        self.batch_2d[i] = np.pad(seq_2d[low_2d:high_2d], ((pad_left_2d, pad_right_2d), (0, 0), (0, 0)), 'edge')
+                        self.batch_2d[i] = np.pad(seq_2d, ((pad_left_2d, pad_right_2d), (0, 0), (0, 0)), 'edge')
                     else:
-                        self.batch_2d[i] = seq_2d[low_2d:high_2d]
+                        self.batch_2d[i] = seq_2d
 
                     if flip:
                         # Flip 2D keypoints
@@ -212,7 +250,30 @@ class UnchunkedGenerator:
     
     def set_augment(self, augment):
         self.augment = augment
-    
+
+    def random_romove(self, seq_2d, frames, pitchs):
+        start_frame = np.random.choice((self.pad * 2 + 1)//5, pitchs, False)
+        start_frame = np.sort(start_frame) * 5
+        end_frame = start_frame + frames   
+
+        for i in range(pitchs - 1):
+            if end_frame[i] > start_frame[i+1]:
+                end_frame[i] = start_frame[i+1]
+                
+            invalid_point = np.random.choice(17, np.random.choice(3) + 4, False)
+            invalid_point = np.sort(invalid_point) 
+            seq_2d[start_frame[i]:end_frame[i],invalid_point,:] = 0
+
+        if end_frame[-1] > self.pad * 2:
+            end_frame[-1] = self.pad * 2
+        
+        invalid_point = np.random.choice(17, np.random.choice(3) + 4, False)
+        invalid_point = np.sort(invalid_point) 
+        seq_2d[start_frame[-1]:end_frame[-1],invalid_point,:] = 0
+
+        # print(np.arange(self.pad * 2 + 1)[start_frame[0]:end_frame[0]])
+        return seq_2d
+        
     def next_epoch(self):
         for seq_cam, seq_3d, seq_2d in zip_longest(self.cameras, self.poses_3d, self.poses_2d):
             batch_cam = None if seq_cam is None else np.expand_dims(seq_cam, axis=0)

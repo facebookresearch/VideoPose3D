@@ -23,9 +23,10 @@ from common.loss import *
 from common.generators import ChunkedGenerator, UnchunkedGenerator
 from time import time
 from common.utils import deterministic_random
-
+ 
 args = parse_args()
 print(args)
+data_root = 'G:/VideoPose3D'
 
 try:
     # Create checkpoint directory if it does not exist
@@ -35,7 +36,7 @@ except OSError as e:
         raise RuntimeError('Unable to create checkpoint directory:', args.checkpoint)
 
 print('Loading dataset...')
-dataset_path = 'data/data_3d_' + args.dataset + '.npz'
+dataset_path = data_root + '/data_3d_' + args.dataset + '.npz'
 if args.dataset == 'h36m':
     from common.h36m_dataset import Human36mDataset
     dataset = Human36mDataset(dataset_path)
@@ -52,18 +53,21 @@ for subject in dataset.subjects():
         
         positions_3d = []
         for cam in anim['cameras']:
+            # 把在世界坐标系下的点分别转换到每个相机坐标系下面
             pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
+            # 把keypoint[0]作为position起点，这个在后面会置0
             pos_3d[:, 1:] -= pos_3d[:, :1] # Remove global offset, but keep trajectory in first position
             positions_3d.append(pos_3d)
         anim['positions_3d'] = positions_3d
 
 print('Loading 2D detections...')
-keypoints = np.load('data/data_2d_' + args.dataset + '_' + args.keypoints + '.npz')
+keypoints = np.load( data_root + '/data_2d_' + args.dataset + '_' + args.keypoints + '.npz')
 keypoints_symmetry = keypoints['metadata'].item()['keypoints_symmetry']
 kps_left, kps_right = list(keypoints_symmetry[0]), list(keypoints_symmetry[1])
 joints_left, joints_right = list(dataset.skeleton().joints_left()), list(dataset.skeleton().joints_right())
 keypoints = keypoints['positions_2d'].item()
 
+# 处理一下2D的帧数比3D帧数多的情况
 for subject in dataset.subjects():
     assert subject in keypoints, 'Subject {} is missing from the 2D detections dataset'.format(subject)
     for action in dataset[subject].keys():
@@ -71,7 +75,7 @@ for subject in dataset.subjects():
         for cam_idx in range(len(keypoints[subject][action])):
             
             # We check for >= instead of == because some videos in H3.6M contain extra frames
-            mocap_length = dataset[subject][action]['positions_3d'][cam_idx].shape[0]
+            mocap_length = dataset[subject][action]['positions_3d'][cam_idx].shape[0] # 帧数
             assert keypoints[subject][action][cam_idx].shape[0] >= mocap_length
             
             if keypoints[subject][action][cam_idx].shape[0] > mocap_length:
@@ -79,7 +83,8 @@ for subject in dataset.subjects():
                 keypoints[subject][action][cam_idx] = keypoints[subject][action][cam_idx][:mocap_length]
 
         assert len(keypoints[subject][action]) == len(dataset[subject][action]['positions_3d'])
-        
+
+#正则化图像坐标
 for subject in keypoints.keys():
     for action in keypoints[subject]:
         for cam_idx, kps in enumerate(keypoints[subject][action]):
@@ -95,7 +100,8 @@ subjects_test = args.subjects_test.split(',')
 semi_supervised = len(subjects_semi) > 0
 if semi_supervised and not dataset.supports_semi_supervised():
     raise RuntimeError('Semi-supervised training is not implemented for this dataset')
-            
+
+# 根据名称和动作来选择数据集合        
 def fetch(subjects, action_filter=None, subset=1, parse_3d_poses=True):
     out_poses_3d = []
     out_poses_2d = []
@@ -187,9 +193,10 @@ for parameter in model_pos.parameters():
 print('INFO: Trainable parameter count:', model_params)
 
 if torch.cuda.is_available():
+    # torch.cuda.set_device(1)
     model_pos = model_pos.cuda()
     model_pos_train = model_pos_train.cuda()
-    
+     
 if args.resume or args.evaluate:
     chk_filename = os.path.join(args.checkpoint, args.resume if args.resume else args.evaluate)
     print('Loading checkpoint', chk_filename)
@@ -203,10 +210,11 @@ test_generator = UnchunkedGenerator(cameras_valid, poses_valid, poses_valid_2d,
                                     kps_left=kps_left, kps_right=kps_right, joints_left=joints_left, joints_right=joints_right)
 print('INFO: Testing on {} frames'.format(test_generator.num_frames()))
 
+# 训练部分
 if not args.evaluate:
     cameras_train, poses_train, poses_train_2d = fetch(subjects_train, action_filter, subset=args.subset)
 
-    lr = args.learning_rate
+    lr = args.learning_rate #default 0.001
     if semi_supervised:
         cameras_semi, _, poses_semi_2d = fetch(subjects_semi, action_filter, parse_3d_poses=False)
         
@@ -240,7 +248,7 @@ if not args.evaluate:
     else:
         optimizer = optim.Adam(model_pos_train.parameters(), lr=lr, amsgrad=True)
         
-    lr_decay = args.lr_decay
+    lr_decay = args.lr_decay # defalut 0.95
 
     losses_3d_train = []
     losses_3d_train_eval = []
@@ -375,6 +383,9 @@ if not args.evaluate:
             losses_2d_train_unlabeled.append(epoch_loss_2d_train_unlabeled / N_semi)
         else:
             # Regular supervised scenario
+            # _ 是[1024,9]
+            # 一个batch_3d 是[1024,1,17,3]
+            # 一个batch_2d 是[1024,243,17,2]
             for _, batch_3d, batch_2d in train_generator.next_epoch():
                 inputs_3d = torch.from_numpy(batch_3d.astype('float32'))
                 inputs_2d = torch.from_numpy(batch_2d.astype('float32'))
@@ -696,6 +707,7 @@ if args.render:
     
     input_keypoints = keypoints[args.viz_subject][args.viz_action][args.viz_camera].copy()
     if args.viz_subject in dataset.subjects() and args.viz_action in dataset[args.viz_subject]:
+        # (1383,17,3)
         ground_truth = dataset[args.viz_subject][args.viz_action]['positions_3d'][args.viz_camera].copy()
     else:
         ground_truth = None
