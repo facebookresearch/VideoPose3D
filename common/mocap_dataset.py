@@ -20,7 +20,8 @@ class MocapDataset:
         for subject in self._data.keys():
             for action in self._data[subject].keys():
                 s = self._data[subject][action]
-                s['positions'] = s['positions'][:, kept_joints]
+                if 'positions' in s:
+                    s['positions'] = s['positions'][:, kept_joints]
                 
         
     def __getitem__(self, key):
