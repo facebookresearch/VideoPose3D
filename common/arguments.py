@@ -65,6 +65,7 @@ def parse_args():
     parser.add_argument('--viz-video', type=str, metavar='PATH', help='path to input video')
     parser.add_argument('--viz-skip', type=int, default=0, metavar='N', help='skip first N frames of input video')
     parser.add_argument('--viz-output', type=str, metavar='PATH', help='output file name (.gif or .mp4)')
+    parser.add_argument('--viz-export', type=str, metavar='PATH', help='output file name for coordinates')
     parser.add_argument('--viz-bitrate', type=int, default=3000, metavar='N', help='bitrate for mp4 videos')
     parser.add_argument('--viz-no-ground-truth', action='store_true', help='do not show ground-truth poses')
     parser.add_argument('--viz-limit', type=int, default=-1, metavar='N', help='only render first N frames')

@@ -42,6 +42,9 @@ if args.dataset == 'h36m':
 elif args.dataset.startswith('humaneva'):
     from common.humaneva_dataset import HumanEvaDataset
     dataset = HumanEvaDataset(dataset_path)
+elif args.dataset.startswith('custom'):
+    from common.custom_dataset import CustomDataset
+    dataset = CustomDataset('data/data_2d_' + args.dataset + '_' + args.keypoints + '.npz')
 else:
     raise KeyError('Invalid dataset')
 
@@ -50,16 +53,18 @@ for subject in dataset.subjects():
     for action in dataset[subject].keys():
         anim = dataset[subject][action]
         
-        positions_3d = []
-        for cam in anim['cameras']:
-            pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
-            pos_3d[:, 1:] -= pos_3d[:, :1] # Remove global offset, but keep trajectory in first position
-            positions_3d.append(pos_3d)
-        anim['positions_3d'] = positions_3d
+        if 'positions' in anim:
+            positions_3d = []
+            for cam in anim['cameras']:
+                pos_3d = world_to_camera(anim['positions'], R=cam['orientation'], t=cam['translation'])
+                pos_3d[:, 1:] -= pos_3d[:, :1] # Remove global offset, but keep trajectory in first position
+                positions_3d.append(pos_3d)
+            anim['positions_3d'] = positions_3d
 
 print('Loading 2D detections...')
-keypoints = np.load('data/data_2d_' + args.dataset + '_' + args.keypoints + '.npz')
-keypoints_symmetry = keypoints['metadata'].item()['keypoints_symmetry']
+keypoints = np.load('data/data_2d_' + args.dataset + '_' + args.keypoints + '.npz', allow_pickle=True)
+keypoints_metadata = keypoints['metadata'].item()
+keypoints_symmetry = keypoints_metadata['keypoints_symmetry']
 kps_left, kps_right = list(keypoints_symmetry[0]), list(keypoints_symmetry[1])
 joints_left, joints_right = list(dataset.skeleton().joints_left()), list(dataset.skeleton().joints_right())
 keypoints = keypoints['positions_2d'].item()
@@ -68,6 +73,9 @@ for subject in dataset.subjects():
     assert subject in keypoints, 'Subject {} is missing from the 2D detections dataset'.format(subject)
     for action in dataset[subject].keys():
         assert action in keypoints[subject], 'Action {} of subject {} is missing from the 2D detections dataset'.format(action, subject)
+        if 'positions_3d' not in dataset[subject][action]:
+            continue
+            
         for cam_idx in range(len(keypoints[subject][action])):
             
             # We check for >= instead of == because some videos in H3.6M contain extra frames
@@ -90,7 +98,10 @@ for subject in keypoints.keys():
 
 subjects_train = args.subjects_train.split(',')
 subjects_semi = [] if not args.subjects_unlabeled else args.subjects_unlabeled.split(',')
-subjects_test = args.subjects_test.split(',')
+if not args.render:
+    subjects_test = args.subjects_test.split(',')
+else:
+    subjects_test = [args.viz_subject]
 
 semi_supervised = len(subjects_semi) > 0
 if semi_supervised and not dataset.supports_semi_supervised():
@@ -160,15 +171,15 @@ cameras_valid, poses_valid, poses_valid_2d = fetch(subjects_test, action_filter)
 filter_widths = [int(x) for x in args.architecture.split(',')]
 if not args.disable_optimizations and not args.dense and args.stride == 1:
     # Use optimized model for single-frame predictions
-    model_pos_train = TemporalModelOptimized1f(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], poses_valid[0].shape[-2],
+    model_pos_train = TemporalModelOptimized1f(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], dataset.skeleton().num_joints(),
                                 filter_widths=filter_widths, causal=args.causal, dropout=args.dropout, channels=args.channels)
 else:
     # When incompatible settings are detected (stride > 1, dense filters, or disabled optimization) fall back to normal model
-    model_pos_train = TemporalModel(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], poses_valid[0].shape[-2],
+    model_pos_train = TemporalModel(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], dataset.skeleton().num_joints(),
                                 filter_widths=filter_widths, causal=args.causal, dropout=args.dropout, channels=args.channels,
                                 dense=args.dense)
     
-model_pos = TemporalModel(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], poses_valid[0].shape[-2],
+model_pos = TemporalModel(poses_valid_2d[0].shape[-2], poses_valid_2d[0].shape[-1], dataset.skeleton().num_joints(),
                             filter_widths=filter_widths, causal=args.causal, dropout=args.dropout, channels=args.channels,
                             dense=args.dense)
 
@@ -695,10 +706,11 @@ if args.render:
     print('Rendering...')
     
     input_keypoints = keypoints[args.viz_subject][args.viz_action][args.viz_camera].copy()
+    ground_truth = None
     if args.viz_subject in dataset.subjects() and args.viz_action in dataset[args.viz_subject]:
-        ground_truth = dataset[args.viz_subject][args.viz_action]['positions_3d'][args.viz_camera].copy()
-    else:
-        ground_truth = None
+        if 'positions_3d' in dataset[args.viz_subject][args.viz_action]:
+            ground_truth = dataset[args.viz_subject][args.viz_action]['positions_3d'][args.viz_camera].copy()
+    if ground_truth is None:
         print('INFO: this action is unlabeled. Ground truth will not be rendered.')
         
     gen = UnchunkedGenerator(None, None, [input_keypoints],
@@ -706,40 +718,46 @@ if args.render:
                              kps_left=kps_left, kps_right=kps_right, joints_left=joints_left, joints_right=joints_right)
     prediction = evaluate(gen, return_predictions=True)
     
-    if ground_truth is not None:
-        # Reapply trajectory
-        trajectory = ground_truth[:, :1]
-        ground_truth[:, 1:] += trajectory
-        prediction += trajectory
+    if args.viz_export is not None:
+        print('Exporting joint positions to', args.viz_export)
+        # Predictions are in camera space
+        np.save(args.viz_export, prediction)
     
-    # Invert camera transformation
-    cam = dataset.cameras()[args.viz_subject][args.viz_camera]
-    if ground_truth is not None:
-        prediction = camera_to_world(prediction, R=cam['orientation'], t=cam['translation'])
-        ground_truth = camera_to_world(ground_truth, R=cam['orientation'], t=cam['translation'])
-    else:
-        # If the ground truth is not available, take the camera extrinsic params from a random subject.
-        # They are almost the same, and anyway, we only need this for visualization purposes.
-        for subject in dataset.cameras():
-            if 'orientation' in dataset.cameras()[subject][args.viz_camera]:
-                rot = dataset.cameras()[subject][args.viz_camera]['orientation']
-                break
-        prediction = camera_to_world(prediction, R=rot, t=0)
-        # We don't have the trajectory, but at least we can rebase the height
-        prediction[:, :, 2] -= np.min(prediction[:, :, 2])
-    
-    anim_output = {'Reconstruction': prediction}
-    if ground_truth is not None and not args.viz_no_ground_truth:
-        anim_output['Ground truth'] = ground_truth
-    
-    input_keypoints = image_coordinates(input_keypoints[..., :2], w=cam['res_w'], h=cam['res_h'])
-    
-    from common.visualization import render_animation
-    render_animation(input_keypoints, anim_output,
-                     dataset.skeleton(), dataset.fps(), args.viz_bitrate, cam['azimuth'], args.viz_output,
-                     limit=args.viz_limit, downsample=args.viz_downsample, size=args.viz_size,
-                     input_video_path=args.viz_video, viewport=(cam['res_w'], cam['res_h']),
-                     input_video_skip=args.viz_skip)
+    if args.viz_output is not None:
+        if ground_truth is not None:
+            # Reapply trajectory
+            trajectory = ground_truth[:, :1]
+            ground_truth[:, 1:] += trajectory
+            prediction += trajectory
+        
+        # Invert camera transformation
+        cam = dataset.cameras()[args.viz_subject][args.viz_camera]
+        if ground_truth is not None:
+            prediction = camera_to_world(prediction, R=cam['orientation'], t=cam['translation'])
+            ground_truth = camera_to_world(ground_truth, R=cam['orientation'], t=cam['translation'])
+        else:
+            # If the ground truth is not available, take the camera extrinsic params from a random subject.
+            # They are almost the same, and anyway, we only need this for visualization purposes.
+            for subject in dataset.cameras():
+                if 'orientation' in dataset.cameras()[subject][args.viz_camera]:
+                    rot = dataset.cameras()[subject][args.viz_camera]['orientation']
+                    break
+            prediction = camera_to_world(prediction, R=rot, t=0)
+            # We don't have the trajectory, but at least we can rebase the height
+            prediction[:, :, 2] -= np.min(prediction[:, :, 2])
+        
+        anim_output = {'Reconstruction': prediction}
+        if ground_truth is not None and not args.viz_no_ground_truth:
+            anim_output['Ground truth'] = ground_truth
+        
+        input_keypoints = image_coordinates(input_keypoints[..., :2], w=cam['res_w'], h=cam['res_h'])
+        
+        from common.visualization import render_animation
+        render_animation(input_keypoints, keypoints_metadata, anim_output,
+                         dataset.skeleton(), dataset.fps(), args.viz_bitrate, cam['azimuth'], args.viz_output,
+                         limit=args.viz_limit, downsample=args.viz_downsample, size=args.viz_size,
+                         input_video_path=args.viz_video, viewport=(cam['res_w'], cam['res_h']),
+                         input_video_skip=args.viz_skip)
     
 else:
     print('Evaluating...')

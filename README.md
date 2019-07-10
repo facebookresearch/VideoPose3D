@@ -65,6 +65,9 @@ python run.py -d humaneva15 -k detectron_pt_coco -str Train/S1,Train/S2,Train/S3
 
 [`DOCUMENTATION.md`](DOCUMENTATION.md) provides a precise description of all command-line arguments.
 
+### Inference in the wild
+We have introduced an experimental feature to run our model on custom videos. See [`INFERENCE.md`](INFERENCE.md) for more details.
+
 ### Training from scratch
 If you want to reproduce the results of our pretrained models, run the following commands.
 

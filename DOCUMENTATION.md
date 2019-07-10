@@ -68,6 +68,7 @@ Here is a list of the command-line arguments related to visualization:
 - `--viz-limit`: render only first N frames. By default, all frames are rendered.
 - `--viz-downsample`: downsample videos by the specified factor, i.e. reduce the frame rate. E.g. if set to `2`, the frame rate is reduced from 50 FPS to 25 FPS. Default: `1` (no downsampling).
 - `--viz-size`: output resolution multiplier. Higher = larger images. Default: `5`.
+- `--viz-export`: export 3D joint coordinates (in camera space) to the specified NumPy archive.
 
 Example:
 ```

@@ -21,6 +21,14 @@ def get_resolution(filename):
         for line in pipe.stdout:
             w, h = line.decode().strip().split(',')
             return int(w), int(h)
+            
+def get_fps(filename):
+    command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+               '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', filename]
+    with sp.Popen(command, stdout=sp.PIPE, bufsize=-1) as pipe:
+        for line in pipe.stdout:
+            a, b = line.decode().strip().split('/')
+            return int(a) / int(b)
 
 def read_video(filename, skip=0, limit=-1):
     w, h = get_resolution(filename)
@@ -39,10 +47,11 @@ def read_video(filename, skip=0, limit=-1):
             if not data:
                 break
             i += 1
+            if i > limit and limit != -1:
+                continue
             if i > skip:
                 yield np.frombuffer(data, dtype='uint8').reshape((h, w, 3))
-            if i == limit:
-                break
+            
                 
                 
     
@@ -50,7 +59,7 @@ def downsample_tensor(X, factor):
     length = X.shape[0]//factor * factor
     return np.mean(X[:length].reshape(-1, factor, *X.shape[1:]), axis=1)
 
-def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, viewport,
+def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrate, azim, output, viewport,
                      limit=-1, downsample=1, size=6, input_video_path=None, input_video_skip=0):
     """
     TODO
@@ -97,10 +106,17 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
     else:
         # Load video using ffmpeg
         all_frames = []
-        for f in read_video(input_video_path, skip=input_video_skip):
+        for f in read_video(input_video_path, skip=input_video_skip, limit=limit):
             all_frames.append(f)
         effective_length = min(keypoints.shape[0], len(all_frames))
         all_frames = all_frames[:effective_length]
+        
+        keypoints = keypoints[input_video_skip:] # todo remove
+        for idx in range(len(poses)):
+            poses[idx] = poses[idx][input_video_skip:]
+        
+        if fps is None:
+            fps = get_fps(input_video_path)
     
     if downsample > 1:
         keypoints = downsample_tensor(keypoints, downsample)
@@ -129,6 +145,9 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
             ax.set_ylim3d([-radius/2 + trajectories[n][i, 1], radius/2 + trajectories[n][i, 1]])
 
         # Update 2D poses
+        joints_right_2d = keypoints_metadata['keypoints_symmetry'][1]
+        colors_2d = np.full(keypoints.shape[1], 'black')
+        colors_2d[joints_right_2d] = 'red'
         if not initialized:
             image = ax_in.imshow(all_frames[i], aspect='equal')
             
@@ -136,7 +155,7 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
                 if j_parent == -1:
                     continue
                     
-                if len(parents) == keypoints.shape[1]:
+                if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
                     # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
                     lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
                                             [keypoints[i, j, 1], keypoints[i, j_parent, 1]], color='pink'))
@@ -148,7 +167,7 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
                                                [pos[j, 1], pos[j_parent, 1]],
                                                [pos[j, 2], pos[j_parent, 2]], zdir='z', c=col))
 
-            points = ax_in.scatter(*keypoints[i].T, 5, color='red', edgecolors='white', zorder=10)
+            points = ax_in.scatter(*keypoints[i].T, 10, color=colors_2d, edgecolors='white', zorder=10)
 
             initialized = True
         else:
@@ -158,7 +177,7 @@ def render_animation(keypoints, poses, skeleton, fps, bitrate, azim, output, vie
                 if j_parent == -1:
                     continue
                 
-                if len(parents) == keypoints.shape[1]:
+                if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
                     lines[j-1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
                                            [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
 

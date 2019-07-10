@@ -108,7 +108,7 @@ class HumanEvaDataset(MocapDataset):
                 self._cameras[prefix + subject] = data
         
         # Load serialized dataset
-        data = np.load(path)['positions_3d'].item()
+        data = np.load(path, allow_pickle=True)['positions_3d'].item()
         
         self._data = {}
         for subject, actions in data.items():
