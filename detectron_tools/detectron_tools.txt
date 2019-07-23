@@ -2,8 +2,8 @@
 The easiest way to run detectron is to run it over a folder with screenshots because thats already implemented in the infer_simple.py file.
 To split the video you plan on using try to use ffmpeg.
 
-Splitting command:  ffmpeg -i ice.mp4 -r 25 splitted_scating/output%04d.png
--i = input
+Splitting command:  ffmpeg -i out_cutted.mp4 -r 25 splitted_scating/output%04d.png
+-i = input (out_cutted.mp4 --> https://github.com/tobiascz/VideoPose3D/blob/master/InTheWildData/out_cutted.mp4)
 -r = fps
 arg = output directory
 
