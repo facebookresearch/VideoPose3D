@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument('-arc', '--architecture', default='3,3,3', type=str, metavar='LAYERS', help='filter widths separated by comma')
     parser.add_argument('--causal', action='store_true', help='use causal convolutions for real-time processing')
     parser.add_argument('-ch', '--channels', default=1024, type=int, metavar='N', help='number of channels in convolution layers')
+    parser.add_argument('--no_kp_probs', dest='keypoint_probs', help='don\'t use keypoint probabilities', action='store_false')
 
     # Experimental
     parser.add_argument('--subset', default=1, type=float, metavar='FRACTION', help='reduce dataset size by fraction')
