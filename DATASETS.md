@@ -62,8 +62,9 @@ cd ..
 We provide support for the following 2D detections:
 
 - `gt`: ground-truth 2D poses, extracted through the camera projection parameters.
-- `sh_pt_mpii`: Stacked Hourglass detections, pretrained on MPII.
+- `sh_pt_mpii`: Stacked Hourglass detections (model pretrained on MPII, no fine tuning).
 - `sh_ft_h36m`: Stacked Hourglass detections, fine-tuned on Human3.6M.
+- `detectron_pt_h36m`: Detectron (Mask R-CNN) detections (model pretrained on COCO, no fine tuning).
 - `detectron_ft_h36m`: Detectron (Mask R-CNN) detections, fine-tuned on Human3.6M.
 - `cpn_ft_h36m_dbb`: Cascaded Pyramid Network detections, fine-tuned on Human3.6M. Bounding boxes from `detectron_ft_h36m`.
 - User-supplied (see below).
@@ -73,7 +74,7 @@ The 2D detection source is specified through the `--keypoints` parameter, which 
 Ground-truth poses (`gt`) have already been extracted by the previous step. The other detections must be downloaded manually (see instructions below). You only need to download the detections you want to use. For reference, our best results on Human3.6M are achieved by `cpn_ft_h36m_dbb`.
 
 ### Mask R-CNN and CPN detections
-You can download these from AWS. You just have to put `data_2d_h36m_cpn_ft_h36m_dbb.npz` and `data_2d_h36m_detectron_ft_h36m.npz` in the `data` directory.
+You can download these directly and put them in the `data` directory. We recommend starting with:
 
 ```sh
 cd data
@@ -83,6 +84,13 @@ cd ..
 ```
 
 These detections have been produced by models fine-tuned on Human3.6M. We adopted the usual protocol of fine-tuning on 5 subjects (S1, S5, S6, S7, and S8). We also included detections from the unlabeled subjects S2, S3, S4, which can be loaded by our framework for semi-supervised experimentation.
+
+Optionally, you can download the Mask R-CNN detections without fine-tuning if you want to experiment with these:
+```sh
+cd data
+wget https://dl.fbaipublicfiles.com/video-pose-3d/data_2d_h36m_detectron_pt_coco.npz
+cd ..
+```
 
 ### Stacked Hourglass detections
 These detections (both pretrained and fine-tuned) are provided by [Martinez et al.](https://github.com/una-dinosauria/3d-pose-baseline) in their repository on 3D human pose estimation. The 2D poses produced by the pretrained model are in the same archive as the dataset ([h36m.zip](https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip)). The fine-tuned poses can be downloaded [here](https://drive.google.com/open?id=0BxWzojlLp259S2FuUXJ6aUNxZkE). Put the two archives in the `data` directory and run:
