@@ -1,21 +1,34 @@
 # Dataset setup
 
 ## Human3.6M
-We provide two ways to set up the Human3.6M dataset on our pipeline. You can either use the [dataset preprocessed by Martinez et al.](https://github.com/una-dinosauria/3d-pose-baseline) (fastest way) or convert the original dataset from scratch. The two methods produce the same result. After this step, you should end up with two files in the `data` directory: `data_3d_h36m.npz` for the 3D poses, and `data_2d_h36m_gt.npz` for the ground-truth 2D poses.
+We provide two ways to set up the Human3.6M dataset on our pipeline. You can either convert the original dataset (recommended) or use the [dataset preprocessed by Martinez et al.](https://github.com/una-dinosauria/3d-pose-baseline) (no longer available as of May 22nd, 2020). The two methods produce the same result. After this step, you should end up with two files in the `data` directory: `data_3d_h36m.npz` for the 3D poses, and `data_2d_h36m_gt.npz` for the ground-truth 2D poses.
 
-### Setup from preprocessed dataset
-Download the [h36m.zip archive](https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip) (source: [3D pose baseline repository](https://github.com/una-dinosauria/3d-pose-baseline)) to the `data` directory, and run the conversion script from the same directory. This step does not require any additional dependency.
+### Setup from original source (recommended)
+**Update:** we have updated the instructions to simplify the procedure. MATLAB is no longer required for this step.
 
+Register to the [Human3.6m website](http://vision.imar.ro/human3.6m/) website (or login if you already have an account) and download the dataset in its original format. You only need to download *Poses -> D3 Positions* for each subject (1, 5, 6, 7, 8, 9, 11)
+
+##### Instructions without MATLAB (recommended)
+You first need to install `cdflib` Python library via `pip install cdflib`.
+
+Extract the archives named `Poses_D3_Positions_S*.tgz` (subjects 1, 5, 6, 7, 8, 9, 11) to a common directory. Your directory tree should look like this:
+
+```
+/path/to/dataset/S1/MyPoseFeatures/D3_Positions/Directions 1.cdf
+/path/to/dataset/S1/MyPoseFeatures/D3_Positions/Directions.cdf
+...
+```
+
+Then, run the preprocessing script:
 ```sh
 cd data
-wget https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip
-python prepare_data_h36m.py --from-archive h36m.zip
+python prepare_data_h36m.py --from-source-cdf /path/to/dataset
 cd ..
 ```
 
-### Setup from original source
-Alternatively, you can download the dataset from the [Human3.6m website](http://vision.imar.ro/human3.6m/) and convert it from its original format. This is useful if the other link goes down, or if you want to be sure to use the original source. MATLAB is required for this step.
+If everything goes well, you are ready to go.
 
+##### Instructions with MATLAB (old instructions)
 First, we need to convert the 3D poses from `.cdf` to `.mat`, so they can be loaded from Python scripts. To this end, we have provided the MATLAB script `convert_cdf_to_mat.m` in the `data` directory. Extract the archives named `Poses_D3_Positions_S*.tgz` (subjects 1, 5, 6, 7, 8, 9, 11) to a directory named `pose`, and set up your directory tree so that it looks like this:
 
 ```
@@ -26,10 +39,22 @@ First, we need to convert the 3D poses from `.cdf` to `.mat`, so they can be loa
 ```
 Then run `convert_cdf_to_mat.m` from MATLAB.
 
-Finally, as before, run the Python conversion script specifying the dataset path:
+Finally, run the Python conversion script specifying the dataset path:
 ```sh
 cd data
 python prepare_data_h36m.py --from-source /path/to/dataset/pose
+cd ..
+```
+
+### Setup from preprocessed dataset (old instructions)
+**Update:** the link to the preprocessed dataset is no longer available; please use the procedure above. These instructions have been kept for backwards compatibility in case you already have a copy of this archive. All procedures produce the same result.
+
+Download the [~~h36m.zip archive~~](https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip) (source: [3D pose baseline repository](https://github.com/una-dinosauria/3d-pose-baseline)) to the `data` directory, and run the conversion script from the same directory. This step does not require any additional dependency.
+
+```sh
+cd data
+wget https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip
+python prepare_data_h36m.py --from-archive h36m.zip
 cd ..
 ```
 
