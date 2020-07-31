@@ -88,7 +88,10 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         ax.set_xlim3d([-radius/2, radius/2])
         ax.set_zlim3d([0, radius])
         ax.set_ylim3d([-radius/2, radius/2])
-        ax.set_aspect('equal')
+        try:
+            ax.set_aspect('equal')
+        except NotImplementedError:
+            ax.set_aspect('auto')
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_zticklabels([])
@@ -183,9 +186,9 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
 
                 for n, ax in enumerate(ax_3d):
                     pos = poses[n][i]
-                    lines_3d[n][j-1][0].set_xdata([pos[j, 0], pos[j_parent, 0]])
-                    lines_3d[n][j-1][0].set_ydata([pos[j, 1], pos[j_parent, 1]])
-                    lines_3d[n][j-1][0].set_3d_properties([pos[j, 2], pos[j_parent, 2]], zdir='z')
+                    lines_3d[n][j-1][0].set_xdata(np.array([pos[j, 0], pos[j_parent, 0]]))
+                    lines_3d[n][j-1][0].set_ydata(np.array([pos[j, 1], pos[j_parent, 1]]))
+                    lines_3d[n][j-1][0].set_3d_properties(np.array([pos[j, 2], pos[j_parent, 2]]), zdir='z')
 
             points.set_offsets(keypoints[i])
         
