@@ -6,7 +6,6 @@
 #
 
 import numpy as np
-import h5py
 
 mpii_metadata = {
     'layout_name': 'mpii',
@@ -88,6 +87,7 @@ def import_cpn_poses(path):
     
     
 def import_sh_poses(path):
+    import h5py
     with h5py.File(path) as hf:
         positions = hf['poses'].value
     return positions.astype('float32')
