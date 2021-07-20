@@ -5,11 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 #
 
-import os
-import sys
-sys.path.append('/srv/galene0/cvprojects/hpaMatt/VideoPose3D')
-import errno
-
 import numpy as np
 
 from common.arguments import parse_args
@@ -18,6 +13,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import os
+import sys
+import errno
 
 from common.camera import *
 from common.model import *
