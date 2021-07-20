@@ -16,7 +16,7 @@ from shutil import rmtree
 from data_utils import suggest_metadata, suggest_pose_importer
 
 import sys
-sys.path.append('../')
+sys.path.append('/srv/galene0/cvprojects/hpaMatt/VideoPose3D')
 from common.utils import wrap
 from itertools import groupby
 

@@ -1,0 +1,7 @@
+
+checkpoint/pretrained_humaneva15_detectron.bin
+*.DS_Store
+*.xml
+*.iml
+*.pyc
+*.npz

@@ -6,14 +6,16 @@
 #
 
 import matplotlib
-
 matplotlib.use('Agg')
+#matplotlib.rcParams['animation.ffmpeg_path'] = r'/usr/local/opt/ffmpeg'
 
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation, writers
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import subprocess as sp
+import cv2
 
 
 def get_resolution(filename):
@@ -23,8 +25,7 @@ def get_resolution(filename):
         for line in pipe.stdout:
             w, h = line.decode().strip().split(',')
             return int(w), int(h)
-
-
+            
 def get_fps(filename):
     command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
                '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', filename]
@@ -33,21 +34,20 @@ def get_fps(filename):
             a, b = line.decode().strip().split('/')
             return int(a) / int(b)
 
-
 def read_video(filename, skip=0, limit=-1):
     w, h = get_resolution(filename)
-
+    
     command = ['ffmpeg',
-               '-i', filename,
-               '-f', 'image2pipe',
-               '-pix_fmt', 'rgb24',
-               '-vsync', '0',
-               '-vcodec', 'rawvideo', '-']
-
+            '-i', filename,
+            '-f', 'image2pipe',
+            '-pix_fmt', 'rgb24',
+            '-vsync', '0',
+            '-vcodec', 'rawvideo', '-']
+    
     i = 0
-    with sp.Popen(command, stdout=sp.PIPE, bufsize=-1) as pipe:
+    with sp.Popen(command, stdout = sp.PIPE, bufsize=-1) as pipe:
         while True:
-            data = pipe.stdout.read(w * h * 3)
+            data = pipe.stdout.read(w*h*3)
             if not data:
                 break
             i += 1
@@ -56,11 +56,33 @@ def read_video(filename, skip=0, limit=-1):
             if i > skip:
                 yield np.frombuffer(data, dtype='uint8').reshape((h, w, 3))
 
+'''
+def read_video(filename, skip=0, limit=-1):
+    cap = cv2.VideoCapture(filename)
+    print(filename)
+    i = 0
+    images = []
+    while cap.isOpened():
+        # get vcap property
+        w = cap.get(3)  # float `width`
+        h = cap.get(4)  # float `height`
 
+        success, image = cap.read()
+        if not success:
+            break
+        i+=1
+        if i < limit and limit != -1:
+            continue
+        if i > skip:
+            images.append(image)
+    return images
+'''
+                
+                
+    
 def downsample_tensor(X, factor):
-    length = X.shape[0] // factor * factor
+    length = X.shape[0]//factor * factor
     return np.mean(X[:length].reshape(-1, factor, *X.shape[1:]), axis=1)
-
 
 def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrate, azim, output, viewport,
                      limit=-1, downsample=1, size=6, input_video_path=None, input_video_skip=0):
@@ -74,7 +96,7 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
      -- 'filename.gif': render and export the animation a gif file (requires imagemagick).
     """
     plt.ioff()
-    fig = plt.figure(figsize=(size * (1 + len(poses)), size))
+    fig = plt.figure(figsize=(size*(1 + len(poses)), size))
     ax_in = fig.add_subplot(1, 1 + len(poses), 1)
     ax_in.get_xaxis().set_visible(False)
     ax_in.get_yaxis().set_visible(False)
@@ -86,11 +108,11 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
     trajectories = []
     radius = 1.7
     for index, (title, data) in enumerate(poses.items()):
-        ax = fig.add_subplot(1, 1 + len(poses), index + 2, projection='3d')
+        ax = fig.add_subplot(1, 1 + len(poses), index+2, projection='3d')
         ax.view_init(elev=15., azim=azim)
-        ax.set_xlim3d([-radius / 2, radius / 2])
+        ax.set_xlim3d([-radius/2, radius/2])
         ax.set_zlim3d([0, radius])
-        ax.set_ylim3d([-radius / 2, radius / 2])
+        ax.set_ylim3d([-radius/2, radius/2])
         try:
             ax.set_aspect('equal')
         except NotImplementedError:
@@ -99,7 +121,7 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         ax.set_yticklabels([])
         ax.set_zticklabels([])
         ax.dist = 7.5
-        ax.set_title(title)  # , pad=35
+        ax.set_title(title) #, pad=35
         ax_3d.append(ax)
         lines_3d.append([])
         trajectories.append(data[:, 0, [0, 1]])
@@ -114,17 +136,17 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         all_frames = []
         for f in read_video(input_video_path, skip=input_video_skip, limit=limit):
             all_frames.append(f)
+        #all_frames = read_video(input_video_path, skip=input_video_skip, limit=limit)
         effective_length = min(keypoints.shape[0], len(all_frames))
         all_frames = all_frames[:effective_length]
-
-        input_video_skip = 0
-        keypoints = keypoints[input_video_skip:]  # todo remove
+        
+        keypoints = keypoints[input_video_skip:] # todo remove
         for idx in range(len(poses)):
             poses[idx] = poses[idx][input_video_skip:]
-
+        
         if fps is None:
             fps = get_fps(input_video_path)
-
+    
     if downsample > 1:
         keypoints = downsample_tensor(keypoints, downsample)
         all_frames = downsample_tensor(np.array(all_frames), downsample).astype('uint8')
@@ -137,20 +159,19 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
     image = None
     lines = []
     points = None
-
+    
     if limit < 1:
         limit = len(all_frames)
     else:
         limit = min(limit, len(all_frames))
 
     parents = skeleton.parents()
-
     def update_video(i):
         nonlocal initialized, image, lines, points
 
         for n, ax in enumerate(ax_3d):
-            ax.set_xlim3d([-radius / 2 + trajectories[n][i, 0], radius / 2 + trajectories[n][i, 0]])
-            ax.set_ylim3d([-radius / 2 + trajectories[n][i, 1], radius / 2 + trajectories[n][i, 1]])
+            ax.set_xlim3d([-radius/2 + trajectories[n][i, 0], radius/2 + trajectories[n][i, 0]])
+            ax.set_ylim3d([-radius/2 + trajectories[n][i, 1], radius/2 + trajectories[n][i, 1]])
 
         # Update 2D poses
         joints_right_2d = keypoints_metadata['keypoints_symmetry'][1]
@@ -158,11 +179,11 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
         colors_2d[joints_right_2d] = 'red'
         if not initialized:
             image = ax_in.imshow(all_frames[i], aspect='equal')
-
+            
             for j, j_parent in enumerate(parents):
                 if j_parent == -1:
                     continue
-
+                    
                 if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
                     # Draw skeleton only if keypoints match (otherwise we don't have the parents definition)
                     lines.append(ax_in.plot([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
@@ -184,28 +205,29 @@ def render_animation(keypoints, keypoints_metadata, poses, skeleton, fps, bitrat
             for j, j_parent in enumerate(parents):
                 if j_parent == -1:
                     continue
-
+                
                 if len(parents) == keypoints.shape[1] and keypoints_metadata['layout_name'] != 'coco':
-                    lines[j - 1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
-                                             [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
+                    lines[j-1][0].set_data([keypoints[i, j, 0], keypoints[i, j_parent, 0]],
+                                           [keypoints[i, j, 1], keypoints[i, j_parent, 1]])
 
                 for n, ax in enumerate(ax_3d):
                     pos = poses[n][i]
-                    lines_3d[n][j - 1][0].set_xdata(np.array([pos[j, 0], pos[j_parent, 0]]))
-                    lines_3d[n][j - 1][0].set_ydata(np.array([pos[j, 1], pos[j_parent, 1]]))
-                    lines_3d[n][j - 1][0].set_3d_properties(np.array([pos[j, 2], pos[j_parent, 2]]), zdir='z')
+                    lines_3d[n][j-1][0].set_xdata(np.array([pos[j, 0], pos[j_parent, 0]]))
+                    lines_3d[n][j-1][0].set_ydata(np.array([pos[j, 1], pos[j_parent, 1]]))
+                    lines_3d[n][j-1][0].set_3d_properties(np.array([pos[j, 2], pos[j_parent, 2]]), zdir='z')
 
             points.set_offsets(keypoints[i])
-
+        
         print('{}/{}      '.format(i, limit), end='\r')
+        
 
     fig.tight_layout()
-
-    anim = FuncAnimation(fig, update_video, frames=np.arange(0, limit), interval=1000 / fps, repeat=False)
+    
+    anim = FuncAnimation(fig, update_video, frames=60, interval=1000/fps, repeat=True)
     if output.endswith('.mp4'):
-        Writer = writers['ffmpeg']
-        writer = Writer(fps=fps, metadata={}, bitrate=bitrate)
-        anim.save(output, writer=writer)
+        writervideo = animation.FFMpegWriter(fps=60)
+        anim.save(output, writer=writervideo)
+        #anim.save(output, writer=matplotlib.animation.FFMpegWriter(fps=fps, metadata={}))
     elif output.endswith('.gif'):
         anim.save(output, dpi=80, writer='imagemagick')
     else:
